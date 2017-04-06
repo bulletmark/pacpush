@@ -20,10 +20,10 @@ all:
 	@echo "Type sudo make install|uninstall"
 
 install:
-	@./cdhist-setup -d "$(DESTDIR)" install
+	@./pacsync-setup -d "$(DESTDIR)" install
 
 uninstall:
-	@./cdhist-setup -d "$(DESTDIR)" uninstall
+	@./pacsync-setup -d "$(DESTDIR)" uninstall
 
 doc:	$(DOCOUT)
 
