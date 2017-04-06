@@ -14,6 +14,8 @@ from pathlib import Path
 # Process command line options
 opt = argparse.ArgumentParser(description=__doc__)
 opt.add_argument('-n', '--dryrun', action='store_true', help='dry run only')
+opt.add_argument('-m', '--no-machcheck', action='store_true',
+        help='do not check machine type compatibility')
 opt.add_argument('hosts', nargs='+', help='hosts to update')
 args = opt.parse_args()
 
@@ -32,30 +34,32 @@ PACPKGS = Path('/var/cache/pacman/pkg')
 AURPKGS = Path(f'~{SUDO_USER}/.cache/pacaur').expanduser()
 
 HOST = platform.node()
-ARCH = platform.machine()
+MACH = platform.machine()
 dryrun = '-n ' if args.dryrun else ''
 
 # For each host specified on the command line ..
 for host in args.hosts:
-    res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
-            universal_newlines=True, stdout=subprocess.PIPE)
+    if not args.no_machcheck:
+        res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
+                universal_newlines=True, stdout=subprocess.PIPE)
 
-    if res.returncode != 0:
-        print(f'{HOST} failed to ssh to {host}.', file=sys.stderr)
-        print(f'Have you set up root ssh access to {host}?', file=sys.stderr)
-        continue
+        if res.returncode != 0:
+            print(f'{HOST} failed to ssh to {host}.', file=sys.stderr)
+            print(f'Have you set up root ssh access to {host}?',
+                    file=sys.stderr)
+            continue
 
-    hostarch = res.stdout.strip().splitlines()[-1].strip()
-    if hostarch != ARCH:
-        print(f'This {HOST} arch={ARCH} does not match {host} arch={hostarch}.',
-                file=sys.stderr)
-        continue
+        hostmach = res.stdout.strip().splitlines()[-1].strip()
+        if hostmach != MACH:
+            print(f'This {HOST} type={MACH} does not match '
+                    f'{host} type={hostmach}.', file=sys.stderr)
+            continue
 
     # Push the current package lists to the host then work out what
     # package updates are required by this host. Then push all new
     # packages it requires that we already hold, including AUR files for
     # pacaur.
-    print(f'{HOST} syncing {ARCH} package lists to {host} ..')
+    print(f'{HOST} syncing {MACH} package lists to {host} ..')
     res = subprocess.run(
             f'/usr/bin/rsync -aRO --info=name1 {dryrun}'
             f'{PACLIST} {host}:/'.split())

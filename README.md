@@ -36,7 +36,8 @@ configure `/etc/ssh/sshd_config` with `PermitRootLogin
 prohibit-password` and use an ssh key for root.
 
 Obviously this only works for machines of the same architecture, i.e.
-compatible package files.
+compatible package files so `pacsync` checks for this before syncing any
+files.
 
 ### COMPARISION TO PACSERVE
 
@@ -52,14 +53,18 @@ any updated AUR packages at all.
 
 ### INSTALLATION
 
-NOTE: Most users should just install
+NOTE: You only need to install `pacsync` on the host where you are pushing
+packages from. It does not need to be installed on the remote host[s]
+you are pushing to although the remote host does need _rsync_, _openssh_,
+and _pacaur_ installed.
+
+Most users should just install
 [_pacsync from the AUR_](https://aur.archlinux.org/packages/pacsync/) and
 skip to the next section.
 
-Requires python (3.6 or later), sudo, rsync, openssh, git, and pacaur
-installed.
-
-Then type the following to install this utility.
+The host requires _rsync_, _openssh_, _pacaur_, _sudo_, _git_, and
+_python_ (3.6 or later) installed. Then type the following to install
+this utility.
 
     git clone http://github.com/bulletmark/pacsync
     cd pacsync
@@ -68,7 +73,7 @@ Then type the following to install this utility.
 ### USAGE
 
 ````
-usage: pacsync [-h] [-n] hosts [hosts ...]
+usage: pacsync [-h] [-n] [-m] hosts [hosts ...]
 
 Utility to push this Arch hosts package and AUR caches to other host[s] to
 avoid those other hosts having to download the same new package lists and
@@ -77,11 +82,12 @@ other hosts (it is easier with a auth key). Requires pacaur to be installed on
 this host and other hosts.
 
 positional arguments:
-  hosts         hosts to update
+  hosts               hosts to update
 
 optional arguments:
-  -h, --help    show this help message and exit
-  -n, --dryrun  dry run only
+  -h, --help          show this help message and exit
+  -n, --dryrun        dry run only
+  -m, --no-machcheck  do not check machine type compatibility
 ````
 
 ### LICENSE
