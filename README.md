@@ -14,7 +14,8 @@ other. So both machines would download the package lists from the web,
 then download and install the out of date system packages, then
 download, build, and install all out of date AUR packages. This takes
 quite some time, particularly on a slow internet connection, and it is
-inefficient to be downloading most packages twice.
+inefficient to be downloading and building most packages twice for the
+same architecture machines.
 
 Using `pacsync`, I now update my PC first then after that update has
 finished I run `pacsync lt` on my PC to update `lt` directly via my
@@ -23,7 +24,7 @@ to work out which packages `lt` has out of date (including AUR
 packages), then pushes all the system and AUR packages that it has which
 `lt` needs.
 
-After running `pacsync`, I run a `pacaur -Syu` update on `lt` and it
+After running `pacsync`, I run a `pacaur -Su` update on `lt` and it
 completes very quickly because `lt` only needs to download the system
 and AUR packages my PC did not have. I typically use very similar system
 and AUR packages on both machines so typically `lt` doesn't need to
