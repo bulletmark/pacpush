@@ -72,6 +72,12 @@ this utility.
 
 ### USAGE
 
+You run it directly on the command line as your normal user (not as
+root) specifying as arguments the host (or hosts) you want to update.
+The utility will re-invoke itself using sudo and will sync the _pacaur_
+cached AUR build directory of the invoking user (i.e.
+`~/.cache/pacaur/`).
+
 ````
 usage: pacsync [-h] [-n] [-m] hosts [hosts ...]
 
