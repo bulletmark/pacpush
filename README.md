@@ -31,12 +31,11 @@ and AUR packages on both machines so typically `lt` doesn't need to
 download or build any updated packages at all.
 
 You need to have root ssh access between your machines for
-`pacsync` to work. For security and also convenience, it is best to
-configure `/etc/ssh/sshd_config` with `PermitRootLogin
-prohibit-password` and use an ssh key for root.
+`pacsync` to work. See the SSH KEY CONFIGURATION section below on how
+best to set this up.
 
 Obviously this only works for machines of the same architecture, i.e.
-compatible package files so `pacsync` checks for this before syncing any
+compatible package files, so `pacsync` checks for this before syncing any
 files.
 
 ### COMPARISION TO PACSERVE
@@ -95,6 +94,31 @@ optional arguments:
   -n, --dryrun        dry run only
   -m, --no-machcheck  do not check machine type compatibility
 ````
+
+### SSH KEY CONFIGURATION
+
+You need to set up root ssh access between your machines for `pacsync`
+to work. For security and convenience, it is best to use an ssh key
+otherwise you will have to answer the password prompt for every remote
+command executed by `pacsync`. The following procedure sets up the sudo
+environment so that remote root logins use your own cached personal ssh
+key. Your first need to set up your own personal ssh key pair of course
+see Google for that part.
+
+On all remote hosts where you want to `pacsync` to:
+
+    sudo mkdir -p /root/.ssh
+    sudo chmod 700 /root/.ssh
+    sudo cp ~/.ssh/authorized_keys /root/.ssh
+
+    # Possibly remove any keys you don't want root to allow if you have
+    # more than one:
+    sudo vim /root/.ssh/authorized_keys
+
+We are also assuming the file `/etc/ssh/sshd_config` contains
+`PermitRootLogin prohibit-password` which is the default on Arch. Note
+that the `sudo` invoked by `pacsync` on itself uses `-E` to maintain
+SSH_AUTH_SOCK for this scheme to work.
 
 ### LICENSE
 

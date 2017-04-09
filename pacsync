@@ -21,7 +21,7 @@ args = opt.parse_args()
 
 # If not invoked as root then re-invoke ourself using sudo
 if os.geteuid() != 0:
-    res = subprocess.run(['/usr/bin/sudo'] + sys.argv)
+    res = subprocess.run(['/usr/bin/sudo', '-E'] + sys.argv)
     sys.exit(res.returncode)
 
 SUDO_USER = os.getenv('SUDO_USER')
