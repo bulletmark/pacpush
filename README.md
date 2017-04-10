@@ -30,9 +30,9 @@ and AUR packages my PC did not have. I typically use very similar system
 and AUR packages on both machines so typically `lt` doesn't need to
 download or build any updated packages at all.
 
-You need to have root ssh access between your machines for
-`pacsync` to work. See the SSH KEY CONFIGURATION section below on how
-best to set this up.
+You need to have root ssh access to the remote machines for `pacsync` to
+work. See the SSH KEY CONFIGURATION section below on how best to set
+this up.
 
 Obviously this only works for machines of the same architecture, i.e.
 compatible package files, so `pacsync` checks for this before syncing any
@@ -97,13 +97,11 @@ optional arguments:
 
 ### SSH KEY CONFIGURATION
 
-You need to set up root ssh access between your machines for `pacsync`
-to work. For security and convenience, it is best to use an ssh key
-otherwise you will have to answer the password prompt for every remote
-command executed by `pacsync`. The following procedure sets up the sudo
-environment so that remote root logins use your own cached personal ssh
-key. Your first need to set up your own personal ssh key pair of course
-see Google for that part.
+You need to set up root ssh access from your host machine to the remote
+machine[s] for `pacsync` to work. For security and convenience, it is
+essential to use an ssh key. The following procedure copies your
+personal public ssh key to the remote root account. Your first need to set
+up your own personal ssh key pair of course, see Google for that part.
 
 On all remote hosts where you want to `pacsync` to:
 
@@ -115,10 +113,9 @@ On all remote hosts where you want to `pacsync` to:
     # more than one:
     sudo vim /root/.ssh/authorized_keys
 
-We are also assuming the file `/etc/ssh/sshd_config` contains
-`PermitRootLogin prohibit-password` which is the default on Arch. Note
-that the `sudo` invoked by `pacsync` on itself passes on SSH_AUTH_SOCK
-for this scheme to work.
+Note that the `sudo` invoked by `pacsync` on itself when you run it as
+your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
+sessions will authenticate against your personal ssh key.
 
 ### LICENSE
 
@@ -132,3 +129,5 @@ This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
 Public License at <http://www.gnu.org/licenses/> for more details.
+
+<!-- vim: se ai syn=markdown: -->
