@@ -10,9 +10,7 @@ DOCDIR="/usr/share/doc/$NAME"
 
 usage() {
     echo "Usage:"
-    echo "As root: sudo $PROG install|uninstall"
-    echo "As user: $PROG clean"
-    echo
+    echo "sudo $PROG install|uninstall"
     echo "(-d option sets DESTDIR for install/uninstall)"
     exit 1
 }

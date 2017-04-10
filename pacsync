@@ -21,7 +21,13 @@ args = opt.parse_args()
 
 # If not invoked as root then re-invoke ourself using sudo
 if os.geteuid() != 0:
-    res = subprocess.run(['/usr/bin/sudo', '-E'] + sys.argv)
+    # Pass ssh auth so that root uses sudo user's ssh cached key
+    cmd = ['/usr/bin/sudo']
+    ssh_auth_sock = os.getenv('SSH_AUTH_SOCK')
+    if ssh_auth_sock:
+        cmd.append(f'SSH_AUTH_SOCK={ssh_auth_sock}')
+
+    res = subprocess.run(cmd + sys.argv)
     sys.exit(res.returncode)
 
 SUDO_USER = os.getenv('SUDO_USER')

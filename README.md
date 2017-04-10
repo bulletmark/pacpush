@@ -117,8 +117,8 @@ On all remote hosts where you want to `pacsync` to:
 
 We are also assuming the file `/etc/ssh/sshd_config` contains
 `PermitRootLogin prohibit-password` which is the default on Arch. Note
-that the `sudo` invoked by `pacsync` on itself uses `-E` to maintain
-SSH_AUTH_SOCK for this scheme to work.
+that the `sudo` invoked by `pacsync` on itself passes on SSH_AUTH_SOCK
+for this scheme to work.
 
 ### LICENSE
 
