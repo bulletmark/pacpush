@@ -122,11 +122,14 @@ def dohost(host, args, g):
     else:
         print(f'{host} is already up to date.')
 
+# May as well do in same process if only a single remote host
+if len(args.hosts) == 1:
+    args.series = True
+
 # For each host specified on the command line ..
 for host in args.hosts:
-    p = Process(target=dohost, args=(host, args, g))
-    p.start()
-
-    # Wait for completion if asked to run in series
     if args.series:
-        p.join()
+        dohost(host, args, g)
+    else:
+        p = Process(target=dohost, args=(host, args, g))
+        p.start()
