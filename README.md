@@ -77,8 +77,11 @@ hosts, you want to update. The utility will re-invoke itself using sudo
 and will sync the _pacaur_ cached AUR build directory of the invoking
 user (i.e. `~/.cache/pacaur/`).
 
+If you specify multiple hosts then the program will update them in
+parallel (unless you disable this with `-s/--series`).
+
 ````
-usage: pacsync [-h] [-n] [-m] hosts [hosts ...]
+usage: pacsync [-h] [-n] [-m] [-s] hosts [hosts ...]
 
 Utility to push this Arch hosts package and AUR caches to other host[s] to
 avoid those other hosts having to download the same new package lists and
@@ -93,6 +96,7 @@ optional arguments:
   -h, --help          show this help message and exit
   -n, --dryrun        dry run only
   -m, --no-machcheck  do not check machine type compatibility
+  -s, --series        Run remote host updates in series not parallel
 ````
 
 ### SSH KEY CONFIGURATION

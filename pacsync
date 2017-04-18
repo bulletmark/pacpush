@@ -9,6 +9,7 @@ be installed on this host and other hosts.
 # Author: Mark Blakeney, Mar 2017.
 
 import sys, os, platform, subprocess, argparse, tempfile
+from multiprocessing import Process
 from pathlib import Path
 
 # Process command line options
@@ -16,6 +17,8 @@ opt = argparse.ArgumentParser(description=__doc__)
 opt.add_argument('-n', '--dryrun', action='store_true', help='dry run only')
 opt.add_argument('-m', '--no-machcheck', action='store_true',
         help='do not check machine type compatibility')
+opt.add_argument('-s', '--series', action='store_true',
+        help='Run remote host updates in series not parallel')
 opt.add_argument('hosts', nargs='+', help='hosts to update')
 args = opt.parse_args()
 
@@ -33,46 +36,48 @@ SUDO_USER = os.getenv('SUDO_USER')
 if not SUDO_USER:
     sys.exit('Do not run as root. Run directly as your normal user.')
 
-# Define paths of interest to this program
-PACLIST = Path('/var/lib/pacman/sync')
-PACPKGS = Path('/var/cache/pacman/pkg')
-AURPKGS = Path(f'~{SUDO_USER}/.cache/pacaur').expanduser()
+# Define global data structure to share constants to sub-processes
+class g:
+    # Define paths of interest to this program
+    PACLIST = Path('/var/lib/pacman/sync')
+    PACPKGS = Path('/var/cache/pacman/pkg')
+    AURPKGS = Path(f'~{SUDO_USER}/.cache/pacaur').expanduser()
 
-HOST = platform.node()
-MACH = platform.machine()
-dryrun = '-n ' if args.dryrun else ''
+    HOST = platform.node()
+    MACH = platform.machine()
+    dryrun = '-n ' if args.dryrun else ''
 
-# For each host specified on the command line ..
-for host in args.hosts:
+def dohost(host, args, g):
+    'Process given host'
     if not args.no_machcheck:
         res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
                 universal_newlines=True, stdout=subprocess.PIPE)
 
         if res.returncode != 0:
-            print(f'{HOST} failed to ssh to {host}.', file=sys.stderr)
+            print(f'{g.HOST} failed to ssh to {host}.', file=sys.stderr)
             print(f'Have you set up root ssh access to {host}?',
                     file=sys.stderr)
-            continue
+            return
 
-        hostmach = res.stdout.strip().splitlines()[-1].strip()
-        if hostmach != MACH:
-            print(f'This {HOST} type={MACH} does not match '
+        hostmach = res.stdout.strip()
+        if hostmach != g.MACH:
+            print(f'This {g.HOST} type={g.MACH} does not match '
                     f'{host} type={hostmach}.', file=sys.stderr)
-            continue
+            return
 
     # Push the current package lists to the host then work out what
     # package updates are required by this host. Then push all new
     # packages it requires that we already hold, including AUR files for
     # pacaur.
-    print(f'{HOST} syncing {MACH} package lists to {host} ..')
+    print(f'{g.HOST} syncing {g.MACH} package lists to {host} ..')
     res = subprocess.run(
-            f'/usr/bin/rsync -aRO --info=name1 {dryrun}'
-            f'{PACLIST} {host}:/'.split())
+            f'/usr/bin/rsync -aRO --info=name1 {g.dryrun}'
+            f'{g.PACLIST} {host}:/'.split())
 
     if res.returncode != 0:
-        print(f'{HOST} failed to sync package lists to {host}.',
+        print(f'{g.HOST} failed to sync package lists to {host}.',
                 file=sys.stderr)
-        continue
+        return
 
     print(f'Getting list of required package updates from {host} ..')
     res = subprocess.run(
@@ -89,30 +94,39 @@ for host in args.hosts:
         # f'{host} requires update of {name} from {oldver} to {newver}'
         if group == 'aur':
             # Sync the entire build dir for an AUR package
-            tpath = AURPKGS.joinpath(name)
+            tpath = g.AURPKGS.joinpath(name)
             desc = f'AUR {name}/'
         else:
             # Can't be sure of the file (package) extension so get the
             # latest file by time.
-            tpath = max(PACPKGS.glob(f'{pkg}-*'),
+            tpath = max(g.PACPKGS.glob(f'{pkg}-*'),
                     key=lambda p: p.stat().st_mtime, default=None)
             desc = pkg
 
         if tpath and tpath.exists():
-            print(f'> {HOST} has {desc} for {host}')
+            print(f'> {g.HOST} has {desc} for {host}')
             filelist.append(tpath)
         else:
-            print(f'> {HOST} does not have {desc} for {host}')
+            print(f'> {g.HOST} does not have {desc} for {host}')
 
     if filelist:
-        print(f'{HOST} syncing updated packages to {host} ..')
+        print(f'{g.HOST} syncing updated packages to {host} ..')
         with tempfile.NamedTemporaryFile() as fp:
             fp.writelines(bytes(l) + b'\n' for l in filelist)
             fp.flush()
             subprocess.run(
-                f'/usr/bin/rsync -arRO --info=name1 {dryrun}'
+                f'/usr/bin/rsync -arRO --info=name1 {g.dryrun}'
                 f'--files-from {fp.name} / {host}:/'.split())
     elif pkg:
-        print(f'{HOST} does not have any packages {host} requires.')
+        print(f'{g.HOST} does not have any packages {host} requires.')
     else:
         print(f'{host} is already up to date.')
+
+# For each host specified on the command line ..
+for host in args.hosts:
+    p = Process(target=dohost, args=(host, args, g))
+    p.start()
+
+    # Wait for completion if asked to run in series
+    if args.series:
+        p.join()
