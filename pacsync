@@ -8,7 +8,7 @@ be installed on this host and other hosts.
 '''
 # Author: Mark Blakeney, Mar 2017.
 
-import sys, os, platform, subprocess, argparse, tempfile
+import sys, os, platform, subprocess, argparse, tempfile, pickle
 from pathlib import Path
 
 # Process command line options
@@ -20,6 +20,12 @@ opt.add_argument('-s', '--series', action='store_true',
         help='Run remote host updates in series not parallel')
 opt.add_argument('hosts', nargs='+', help='hosts to update')
 args = opt.parse_args()
+
+# Save ordinary user environment to reference for later running as root
+fp = tempfile.NamedTemporaryFile()
+pickle.dump(dict(os.environ), fp)
+fp.flush()
+userenv_fname = fp.name
 
 # If not invoked as root then re-invoke ourself using sudo
 if os.geteuid() != 0:
@@ -35,10 +41,16 @@ SUDO_USER = os.getenv('SUDO_USER')
 if not SUDO_USER:
     sys.exit('Do not run as root. Run directly as your normal user.')
 
+# Load calling user's environment for reference
+with open(userenv_fname, 'rb') as fp:
+    userenv = pickle.load(fp)
+
 # Define paths of interest to this program
+aurdest = userenv.get('AURDEST')
+AURPKGS = Path(aurdest) if aurdest else \
+        Path(f'~{SUDO_USER}/.cache/pacaur').expanduser()
 PACLIST = Path('/var/lib/pacman/sync')
 PACPKGS = Path('/var/cache/pacman/pkg')
-AURPKGS = Path(f'~{SUDO_USER}/.cache/pacaur').expanduser()
 
 HOST = platform.node()
 MACH = platform.machine()
@@ -127,6 +139,7 @@ for host in args.hosts:
     if do_in_series:
         synchost(host)
     else:
+        # Do in parallel ..
         from multiprocessing import Process
         p = Process(target=synchost, args=(host,))
         p.start()
