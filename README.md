@@ -107,7 +107,8 @@ essential to use an ssh key. The following procedure copies your
 personal public ssh key to the remote root account. Your first need to set
 up your own personal ssh key pair of course, see Google for that part.
 
-On all remote hosts where you want to `pacsync` to:
+On a remote host to which you want to `pacsync` (assuming you have
+already set up personal ssh access to that host):
 
     sudo mkdir -p /root/.ssh
     sudo chmod 700 /root/.ssh
