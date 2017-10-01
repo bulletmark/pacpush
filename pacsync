@@ -22,10 +22,9 @@ opt.add_argument('hosts', nargs='+', help='hosts to update')
 args = opt.parse_args()
 
 # Save ordinary user environment to reference for later running as root
-fp = tempfile.NamedTemporaryFile()
-pickle.dump(dict(os.environ), fp)
-fp.flush()
-userenv_fname = fp.name
+fpenv = tempfile.NamedTemporaryFile()
+pickle.dump(dict(os.environ), fpenv)
+fpenv.flush()
 
 # If not invoked as root then re-invoke ourself using sudo
 if os.geteuid() != 0:
@@ -42,7 +41,7 @@ if not SUDO_USER:
     sys.exit('Do not run as root. Run directly as your normal user.')
 
 # Load calling user's environment for reference
-with open(userenv_fname, 'rb') as fp:
+with open(fpenv.name, 'rb') as fp:
     userenv = pickle.load(fp)
 
 # Define paths of interest to this program
