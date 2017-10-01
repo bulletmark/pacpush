@@ -19,29 +19,30 @@ opt.add_argument('-m', '--no-machcheck', action='store_true',
 opt.add_argument('-s', '--series', action='store_true',
         help='Run remote host updates in series not parallel')
 opt.add_argument('hosts', nargs='+', help='hosts to update')
+opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()
-
-# Save ordinary user environment to reference for later running as root
-fpenv = tempfile.NamedTemporaryFile()
-pickle.dump(dict(os.environ), fpenv)
-fpenv.flush()
 
 # If not invoked as root then re-invoke ourself using sudo
 if os.geteuid() != 0:
-    # Pass ssh auth so that root uses sudo user's ssh cached key
-    cmd = ['/usr/bin/sudo']
-    ssh_auth_sock = os.getenv('SSH_AUTH_SOCK')
-    if ssh_auth_sock:
-        cmd.append(f'SSH_AUTH_SOCK={ssh_auth_sock}')
+    # Save ordinary user environment to reference for running as root
+    fp = tempfile.NamedTemporaryFile()
+    pickle.dump(dict(os.environ), fp)
+    fp.flush()
 
-    sys.exit(subprocess.run(cmd + sys.argv).returncode)
+    # Pass ssh auth so that root uses sudo user's ssh cached key and
+    # also pass user environment
+    sock = os.getenv('SSH_AUTH_SOCK')
+    cmd = ['/usr/bin/sudo', f'SSH_AUTH_SOCK={sock}'] + sys.argv + \
+            [f'--env={fp.name}']
+    sys.exit(subprocess.run(cmd).returncode)
 
 SUDO_USER = os.getenv('SUDO_USER')
 if not SUDO_USER:
     sys.exit('Do not run as root. Run directly as your normal user.')
 
-# Load calling user's environment for reference
-with open(fpenv.name, 'rb') as fp:
+# Load calling user's environment for reference. This is a hidden
+# argument passed programmatically from above.
+with open(args.env, 'rb') as fp:
     userenv = pickle.load(fp)
 
 # Define paths of interest to this program
