@@ -20,15 +20,15 @@ all:
 	@echo "Type sudo make install|uninstall|doc|check|clean"
 
 install:
-	@./pacsync-setup -d "$(DESTDIR)" install
+	@./pacpush-setup -d "$(DESTDIR)" install
 
 uninstall:
-	@./pacsync-setup -d "$(DESTDIR)" uninstall
+	@./pacpush-setup -d "$(DESTDIR)" uninstall
 
 doc:	$(DOCOUT)
 
 check:
-	flake8 pacsync
+	flake8 pacpush
 
 $(DOCOUT): $(DOC)
 	markdown $< >$@

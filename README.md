@@ -1,8 +1,8 @@
-## PACSYNC
+## PACPUSH
 
-[pacsync](http://github.com/bulletmark/pacsync) is a small and simple
-command line utility which you can use to manually sync `pacman` and
-`pacaur` Arch Linux package updates between machines to avoid having to
+[pacpush](http://github.com/bulletmark/pacpush) is a small and simple
+command line utility which you can use to manually push `pacman` and
+`pacaur` Arch Linux package updates to other machines to avoid having to
 download them more than once via the web. It requires you to be using
 the [pacaur](https://aur.archlinux.org/packages/pacaur/) AUR helper.
 
@@ -17,25 +17,25 @@ quite some time, particularly on a slow internet connection, and it is
 inefficient to be downloading and building most packages twice for the
 same architecture machines.
 
-Using `pacsync`, I now update my PC first then after that update has
-finished I run `pacsync lt` on my PC to update `lt` directly via my
-local LAN. Pacsync pushes the updated package lists, then queries `lt`
+Using `pacpush`, I now update my PC first then after that update has
+finished I run `pacpush lt` on my PC to update `lt` directly via my
+local LAN. Pacpush pushes the updated package lists, then queries `lt`
 to work out which packages `lt` has out of date (including AUR
 packages), then pushes all the system and AUR packages that it has which
 `lt` needs.
 
-After running `pacsync`, I run a `pacaur -Su` update on `lt` and it
+After running `pacpush`, I run a `pacaur -Su` update on `lt` and it
 completes very quickly because `lt` only needs to download the system
 and AUR packages my PC did not have. I typically use very similar system
 and AUR packages on both machines so typically `lt` doesn't need to
 download or build any updated packages at all.
 
-You need to have root ssh access to the remote machines for `pacsync` to
+You need to have root ssh access to the remote machines for `pacpush` to
 work. See the SSH KEY CONFIGURATION section below on how best to set
 this up.
 
 Obviously this only works for machines of the same architecture, i.e.
-compatible package files, so `pacsync` checks for this before syncing any
+compatible package files, so `pacpush` checks for this before pushing any
 files.
 
 ### COMPARISION TO PACSERVE
@@ -46,27 +46,27 @@ is usually recommended for this use case. However pacserve does not sync
 the package lists nor does it do anything about AUR packages which is
 particularly unfortunate because AUR package downloads often include
 huge source and other files and can require long build times. Since
-`pacsync` syncs the entire AUR directory for each required package, the
+`pacpush` pushes the entire AUR directory for each required package, the
 second machine benefits by typically not having to download or rebuild
 any updated AUR packages at all.
 
 ### INSTALLATION
 
-NOTE: You only need to install `pacsync` on the host where you are pushing
+NOTE: You only need to install `pacpush` on the host where you are pushing
 packages from. It does not need to be installed on the remote host[s]
 you are pushing to although the remote host does need _rsync_, _openssh_,
 and _pacaur_ installed.
 
 Most users should just install
-[_pacsync from the AUR_](https://aur.archlinux.org/packages/pacsync/) and
+[_pacpush from the AUR_](https://aur.archlinux.org/packages/pacpush/) and
 skip to the next section.
 
 The host requires _rsync_, _openssh_, _pacaur_, _sudo_, _git_, and
 _python_ (3.6 or later) installed. Then type the following to install
 this utility.
 
-    git clone http://github.com/bulletmark/pacsync
-    cd pacsync
+    git clone http://github.com/bulletmark/pacpush
+    cd pacpush
     sudo make install
 
 ### USAGE
@@ -74,14 +74,14 @@ this utility.
 You run it directly on the command line as your normal user (not as root
 and not using sudo explicitly) specifying as arguments the host, or
 hosts, you want to update. The utility will re-invoke itself using sudo
-and will sync the _pacaur_ cached AUR build directory of the invoking
+and will push the _pacaur_ cached AUR build directory of the invoking
 user (i.e. `~/.cache/pacaur/`).
 
 If you specify multiple hosts then the program will update them in
 parallel (unless you disable this with `-s/--series`).
 
 ````
-usage: pacsync [-h] [-n] [-m] [-s] hosts [hosts ...]
+usage: pacpush [-h] [-n] [-m] [-s] hosts [hosts ...]
 
 Utility to push this Arch hosts package and AUR caches to other host[s] to
 avoid those other hosts having to download the same new package lists and
@@ -102,12 +102,12 @@ optional arguments:
 ### SSH KEY CONFIGURATION
 
 You need to set up root ssh access from your host machine to the remote
-machine[s] for `pacsync` to work. For security and convenience, it is
+machine[s] for `pacpush` to work. For security and convenience, it is
 essential to use an ssh key. The following procedure copies your
 personal public ssh key to the remote root account. Your first need to set
 up your own personal ssh key pair of course, see Google for that part.
 
-On a remote host to which you want to `pacsync` (assuming you have
+On a remote host to which you want to `pacpush` (assuming you have
 already set up personal ssh access to that host):
 
     sudo mkdir -p /root/.ssh
@@ -118,7 +118,7 @@ already set up personal ssh access to that host):
     # more than one:
     sudo vim /root/.ssh/authorized_keys
 
-Note that the `sudo` invoked by `pacsync` on itself when you run it as
+Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
 sessions will authenticate against your personal ssh key.
 
