@@ -52,18 +52,17 @@ any updated AUR packages at all.
 
 ### INSTALLATION
 
-NOTE: You only need to install `pacpush` on the host where you are pushing
-packages from. It does not need to be installed on the remote host[s]
-you are pushing to although the remote host does need _rsync_, _openssh_,
-and _pacaur_ installed.
+Both the local and the remote hosts need _rsync_, _openssh_, and
+_pacaur_ installed.
 
-Most users should just install
-[_pacpush from the AUR_](https://aur.archlinux.org/packages/pacpush/) and
-skip to the next section.
+You only need to install `pacpush` on the local host where you are
+pushing packages from. It does not need to be installed on the remote
+host[s] you are pushing to. Most users should just install [_pacpush
+from the AUR_](https://aur.archlinux.org/packages/pacpush/) and skip to
+the next section.
 
-The host requires _rsync_, _openssh_, _pacaur_, _sudo_, _git_, and
-_python_ (3.6 or later) installed. Then type the following to install
-this utility.
+The local host also requires _sudo_, _git_, and _python_ (3.6 or later)
+installed. Then type the following to install this utility.
 
     git clone http://github.com/bulletmark/pacpush
     cd pacpush
@@ -120,7 +119,7 @@ already set up personal ssh access to that host):
 
 Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
-sessions will authenticate against your personal ssh key.
+session authenticates against your personal ssh key.
 
 ### LICENSE
 
