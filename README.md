@@ -66,7 +66,7 @@ installed. Then type the following to install this utility.
 
     git clone http://github.com/bulletmark/pacpush
     cd pacpush
-    sudo make install
+    sudo make install (or sudo ./pacpush-setup install)
 
 ### USAGE
 
@@ -120,6 +120,12 @@ already set up personal ssh access to that host):
 Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
 session authenticates against your personal ssh key.
+
+### UPGRADE
+
+    cd pacpush  # Source dir, as above
+    git pull
+    sudo make install (or sudo ./pacpush-setup install)
 
 ### LICENSE
 
