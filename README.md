@@ -22,7 +22,8 @@ finished I run `pacpush lt` on my PC to update `lt` directly via my
 local LAN. Pacpush pushes the updated package lists, then queries `lt`
 to work out which packages `lt` has out of date (including AUR
 packages), then pushes all the system and AUR packages that it has which
-`lt` needs.
+`lt` needs. Note you can specify multiple hosts which will get queried
+and updated in parallel.
 
 After running `pacpush`, I run a `pacaur -Su` update on `lt` and it
 completes very quickly because `lt` only needs to download the system
