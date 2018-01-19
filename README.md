@@ -3,8 +3,9 @@
 [pacpush](http://github.com/bulletmark/pacpush) is a small and simple
 command line utility which you can use to manually push `pacman` and
 `pacaur` Arch Linux package updates to other machines to avoid having to
-download them more than once via the web. It requires you to be using
-the [pacaur](https://aur.archlinux.org/packages/pacaur/) AUR helper.
+download them more than once via the web. It currently requires you to
+be using the [pacaur](https://aur.archlinux.org/packages/pacaur/) AUR
+helper.
 
 My use case follows as a good example of what this utility is for.
 
@@ -127,6 +128,15 @@ session authenticates against your personal ssh key.
     cd pacpush  # Source dir, as above
     git pull
     sudo make install (or sudo ./pacpush-setup install)
+
+### NOTE ABOUT PACAUR
+
+In late 2017, it was announced that the AUR helper
+[pacaur](https://aur.archlinux.org/packages/pacaur/) would be
+unmaintained going forward. Presently (early 2018), `pacaur` and thus
+`pacpush` still work fine. If this situation changes and/or another AUR
+helper becomes dominant amongst Arch users, then this program will be
+ported to support the other AUR helper.
 
 ### LICENSE
 
