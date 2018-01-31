@@ -2,17 +2,15 @@
 
 [pacpush](http://github.com/bulletmark/pacpush) is a small and simple
 command line utility which you can use to manually push `pacman` and
-`pacaur` Arch Linux package updates to other machines to avoid having to
-download them more than once via the web. It currently requires you to
-be using the [pacaur](https://aur.archlinux.org/packages/pacaur/) AUR
-helper.
+your AUR helper Arch Linux package updates to other machines to avoid
+having to download them more than once via the web.
 
 My use case follows as a good example of what this utility is for.
 
 I update my main Arch PC and my Arch laptop every day using `pacaur -Syu`.
-Previously, I would update either both machines in parallel, or one before the
-other. So both machines would download the package lists from the web,
-then download and install the out of date system packages, then
+Previously, I would update either both machines in parallel, or one
+before the other. So both machines would download the package lists from
+the web, then download and install the out of date system packages, then
 download, build, and install all out of date AUR packages. This takes
 quite some time, particularly on a slow internet connection, and it is
 inefficient to be downloading and building most packages twice for the
@@ -40,6 +38,10 @@ Obviously this only works for machines of the same architecture, i.e.
 compatible package files, so `pacpush` checks for this before pushing any
 files.
 
+Note that `pacpush` should work with any AUR helper so long as you set
+`clonedir` appropriately in your configuration file, see the
+CONFIGURATION section below for details.
+
 ### COMPARISION TO PACSERVE
 
 To solve this problem, I originally started using
@@ -54,8 +56,9 @@ any updated AUR packages at all.
 
 ### INSTALLATION
 
-Both the local and the remote hosts need _rsync_, _openssh_, and
-_pacaur_ installed.
+The local host needs _python-ruamel-yaml_ installed.
+The remote hosts need _cower_ installed.
+Both the local and the remote hosts need _rsync_ and _openssh_ installed.
 
 You only need to install `pacpush` on the local host where you are
 pushing packages from. It does not need to be installed on the remote
@@ -70,35 +73,17 @@ installed. Then type the following to install this utility.
     cd pacpush
     sudo make install (or sudo ./pacpush-setup install)
 
-### USAGE
+### CONFIGURATION
 
-You run it directly on the command line as your normal user (not as root
-and not using sudo explicitly) specifying as arguments the host, or
-hosts, you want to update. The utility will re-invoke itself using sudo
-and will push the _pacaur_ cached AUR build directory of the invoking
-user (i.e. `~/.cache/pacaur/`).
-
-If you specify multiple hosts then the program will update them in
-parallel (unless you disable this with `-s/--series`).
-
-````
-usage: pacpush [-h] [-n] [-m] [-s] hosts [hosts ...]
-
-Utility to push this Arch hosts package and AUR caches to other host[s] to
-avoid those other hosts having to download the same new package lists and
-updated packages, at least for common packages. Requires root ssh access to
-other hosts (it is easier with a auth key). Requires pacaur to be installed on
-this host and other hosts.
-
-positional arguments:
-  hosts               hosts to update
-
-optional arguments:
-  -h, --help          show this help message and exit
-  -n, --dryrun        dry run only
-  -m, --no-machcheck  do not check machine type compatibility
-  -s, --series        Run remote host updates in series not parallel
-````
+The default configuration file is installed to `/etc/pacpush.conf`. Copy
+this file to your personal `~/.config/pacpush.conf` if you want to
+change it. Currently the only configuration value is `clonedir` which is
+the location of your AUR helpers download/build directory. This is the
+directory from which AUR packages are rsync'd from the local host to
+remote hosts. Ensure that `clonedir` is set to point to the directory
+your AUR helper is using. E.g. the default is `~/.cache/pacaur` for
+_pacaur_ but this will have to be changed if you are not using _pacaur_.
+Remember to change this location if you change your AUR helper.
 
 ### SSH KEY CONFIGURATION
 
@@ -123,20 +108,43 @@ Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
 session authenticates against your personal ssh key.
 
+### USAGE
+
+You run it directly on the command line as your normal user (not as root
+and not using sudo explicitly) specifying as arguments the host, or
+hosts, you want to update. The utility will re-invoke itself using sudo
+and will push the cached AUR build directory of the invoking
+user (i.e. the _clonedir_ location from the configuration file).
+
+If you specify multiple hosts then the program will update them in
+parallel (unless you disable this with `-s/--series`).
+
+````
+usage: pacpush [-h] [-n] [-m] [-s] [-c CONFFILE] hosts [hosts ...]
+
+Utility to push this Arch hosts package and AUR caches to other host[s] to
+avoid those other hosts having to download the same new package lists and
+updated packages, at least for common packages. Requires root ssh access to
+other hosts (it is easier with a auth key). Requires cower to be installed on
+all target hosts.
+
+positional arguments:
+  hosts                 hosts to update
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -n, --dryrun          dry run only
+  -m, --no-machcheck    do not check machine type compatibility
+  -s, --series          Run remote host updates in series not parallel
+  -c CONFFILE, --conffile CONFFILE
+                        alternative configuration file
+````
+
 ### UPGRADE
 
     cd pacpush  # Source dir, as above
     git pull
     sudo make install (or sudo ./pacpush-setup install)
-
-### NOTE ABOUT PACAUR
-
-In late 2017, it was announced that the AUR helper
-[pacaur](https://aur.archlinux.org/packages/pacaur/) would be
-unmaintained going forward. Presently (early 2018), `pacaur` and thus
-`pacpush` still work fine. If this situation changes and/or another AUR
-helper becomes dominant amongst Arch users, then this program will be
-ported to support the other AUR helper.
 
 ### LICENSE
 

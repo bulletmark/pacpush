@@ -3,13 +3,23 @@
 Utility to push this Arch hosts package and AUR caches to other host[s]
 to avoid those other hosts having to download the same new package lists
 and updated packages, at least for common packages. Requires root ssh
-access to other hosts (it is easier with a auth key). Requires pacaur to
-be installed on this host and other hosts.
+access to other hosts (it is easier with a auth key). Requires cower to
+be installed on all target hosts.
 '''
 # Author: Mark Blakeney, Mar 2017.
 
 import sys, os, platform, subprocess, argparse, tempfile, pickle
+import ruamel.yaml as yaml
 from pathlib import Path
+
+PROG = Path(sys.argv[0]).stem
+
+# Conf file containing gesture commands.
+# Search first for user file then system file.
+CONFNAME = f'{PROG}.conf'
+USERCNF = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+USERCACHE = os.getenv('XDG_CACHE_HOME', os.path.expanduser('~/.cache'))
+CONFDIRS = (USERCNF, '/etc')
 
 # Process command line options
 opt = argparse.ArgumentParser(description=__doc__)
@@ -18,15 +28,37 @@ opt.add_argument('-m', '--no-machcheck', action='store_true',
         help='do not check machine type compatibility')
 opt.add_argument('-s', '--series', action='store_true',
         help='Run remote host updates in series not parallel')
+opt.add_argument('-c', '--conffile',
+        help='alternative configuration file')
 opt.add_argument('hosts', nargs='+', help='hosts to update')
 opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()
 
 # If not invoked as root then re-invoke ourself using sudo
 if os.geteuid() != 0:
+    # Search for configuration file. Use file given as command line
+    # argument, else look for file in search dir order.
+    if args.conffile:
+        conffile = Path(args.conffile)
+        if not conffile.exists():
+            sys.exit(f'Conf file "{conffile}" does not exist.')
+    else:
+        for confdir in CONFDIRS:
+            conffile = Path(confdir, CONFNAME)
+            if conffile.exists():
+                break
+        else:
+            dirs = ' or '.join(CONFDIRS)
+            sys.exit(f'No file {CONFNAME} in {dirs}.')
+
+    with conffile.open() as fp:
+        conf = yaml.safe_load(fp)
+
+    clonedir = Path(conf.get('clonedir', f'{USERCACHE}/pacaur')).expanduser()
+
     # Save ordinary user environment to reference for running as root
     fp = tempfile.NamedTemporaryFile()
-    pickle.dump(dict(os.environ), fp)
+    pickle.dump(clonedir, fp)
     fp.flush()
 
     # Pass ssh auth so that root uses sudo user's ssh cached key and
@@ -43,12 +75,9 @@ if not SUDO_USER:
 # Load calling user's environment for reference. This is a hidden
 # argument passed programmatically from above.
 with open(args.env, 'rb') as fp:
-    userenv = pickle.load(fp)
+    clonedir = pickle.load(fp)
 
-# Define paths of interest to this program
-aurdest = userenv.get('AURDEST')
-AURPKGS = Path(aurdest) if aurdest else \
-        Path(f'~{SUDO_USER}/.cache/pacaur').expanduser()
+# Define paths of interest for pacman
 PACLIST = Path('/var/lib/pacman/sync')
 PACPKGS = Path('/var/cache/pacman/pkg')
 
@@ -76,8 +105,7 @@ def synchost(host):
 
     # Push the current package lists to the host then work out what
     # package updates are required by this host. Then push all new
-    # packages it requires that we already hold, including AUR files for
-    # pacaur.
+    # packages it requires that we already hold, including AUR files.
     print(f'{HOST} syncing {MACH} package lists to {host} ..')
     res = subprocess.run(
             f'/usr/bin/rsync -aRO --info=name1 {dryrun}'
@@ -89,21 +117,26 @@ def synchost(host):
         return
 
     print(f'Getting list of required package updates from {host} ..')
-    res = subprocess.run(
-            f'/usr/bin/ssh {host} pacaur -Qu --color=never'.split(),
+    res = subprocess.run(f'/usr/bin/ssh {host} pacman -Qu && '
+            f'cower -u --color=never'.split(),
             universal_newlines=True, stdout=subprocess.PIPE)
 
     filelist = []
     pkg = None
     for line in res.stdout.strip().splitlines():
-        junk, group, name, oldver, junk, *newvers = line.split()
-        newver = newvers[0]
+        if line.startswith(':'):
+            aur = True
+            junk, name, oldver, junk, newver = line.split()
+        else:
+            aur = False
+            name, oldver, junk, newver = line.split()
+
         pkg = f'{name}-{newver}'
 
         # f'{host} requires update of {name} from {oldver} to {newver}'
-        if group == 'aur':
-            # Sync the entire build dir for an AUR package
-            tpath = AURPKGS.joinpath(name)
+        if aur:
+            # Sync the entire clone dir for an AUR package
+            tpath = clonedir.joinpath(name)
             desc = f'AUR {name}/'
         else:
             # Can't be sure of the file (package) extension so get the
