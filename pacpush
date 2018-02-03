@@ -117,7 +117,7 @@ def synchost(host):
         return
 
     print(f'Getting list of required package updates from {host} ..')
-    res = subprocess.run(f'/usr/bin/ssh {host} pacman -Qu && '
+    res = subprocess.run(f'/usr/bin/ssh {host} pacman -Qu; '
             f'cower -u --color=never'.split(),
             universal_newlines=True, stdout=subprocess.PIPE)
 
