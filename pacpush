@@ -10,7 +10,7 @@ access to other hosts (it is easier with a auth key).
 import sys, os, platform, subprocess, argparse, tempfile, pickle
 from pathlib import Path
 
-AURWEB = 'https://aur.archlinux.org/rpc/'
+AURWEB = 'https://aur.archlinux.org/rpc'
 PROG = Path(sys.argv[0]).stem
 
 # Conf file containing gesture commands.
@@ -29,28 +29,39 @@ opt.add_argument('-s', '--series', action='store_true',
         help='Run remote host updates in series not parallel')
 opt.add_argument('-c', '--conffile',
         help='alternative configuration file')
-opt.add_argument('-u', '--updates-aur', action='store_true',
-        help='just report installed packages with updates pending in the AUR')
+opt.add_argument('-u', '--updates', action='store_true',
+        help='just report all installed packages with updates pending, '
+        'including AUR packages')
 opt.add_argument('hosts', nargs='*', help='hosts to update')
 opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()
 
-if args.updates_aur:
-    # Just report installed packages with updates pending in AUR
-    from distutils.version import LooseVersion as Version
-    import requests
-
-    # Get list of installed AUR packages
-    res = subprocess.run(f'pacman -Qm'.split(), universal_newlines=True,
+def pacman(opt):
+    'Run pacman with given option[s] and return list of result lines'
+    cmd = f'pacman {opt}'
+    res = subprocess.run(cmd.split(), universal_newlines=True,
             stdout=subprocess.PIPE)
 
     if res.returncode != 0:
-        sys.exit('exited with pacman error')
+        sys.exit(f'.. exited with error from {cmd}')
+
+    return res.stdout.splitlines()
+
+if args.updates:
+    # Just report all installed native and AUR packages with updates
+    # pending.
+    from distutils.version import LooseVersion as Version
+    import requests
+
+    # Print out version updates for standard packages
+    for line in pacman('-Qu'):
+        name, oldver, junk, newver = line.split()
+        print(f'{name} {oldver} -> {newver}')
 
     # Create dict of installed AUR packages and versions
     pkgs = {}
-    for pkg in res.stdout.splitlines():
-        name, vers = pkg.split()
+    for line in pacman('-Qm'):
+        name, vers = line.split()
         pkgs[name] = Version(vers)
 
     # Get info for this list of packages from AURWEB
@@ -59,18 +70,20 @@ if args.updates_aur:
     try:
         r = requests.get(AURWEB, params=data)
     except Exception as e:
-        sys.exit(f'AUR error: {str(e)}')
+        sys.exit(f'AURWEB error: {str(e)}')
 
     if r.status_code != requests.codes.ok:
-        sys.exit(f'AUR returned error: {r.text}')
+        sys.exit(f'AURWEB returned error: {r.text}')
 
-    # Report any version updates
+    # Now print out version updates for AUR packages
+    # Follow cower format for prepending AUR lines with ':: '.
     for pkg in r.json()['results']:
         name = str(pkg.get('Name'))
         newver = Version(pkg.get('Version', ''))
-        oldver =  pkgs.get(name)
+        oldver = pkgs.get(name)
         if oldver and oldver < newver:
             print(f':: {name} {str(oldver)} -> {str(newver)}')
+
     sys.exit(0)
 
 if not args.hosts:
@@ -129,7 +142,7 @@ MACH = platform.machine()
 dryrun = '-n ' if args.dryrun else ''
 
 def synchost(host):
-    'Process given host'
+    'Sync to given host'
     if not args.no_machcheck:
         res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
                 universal_newlines=True, stdout=subprocess.PIPE)
@@ -160,8 +173,7 @@ def synchost(host):
         return
 
     print(f'Getting list of required package updates from {host} ..')
-    res = subprocess.run(f'/usr/bin/ssh {host} pacman -Qu; '
-            'pacpush -u'.split(),
+    res = subprocess.run(f'/usr/bin/ssh {host} pacpush -u'.split(),
             universal_newlines=True, stdout=subprocess.PIPE)
 
     filelist = []

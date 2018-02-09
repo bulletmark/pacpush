@@ -108,7 +108,7 @@ If you specify multiple hosts then the program will update them in
 parallel (unless you disable this with `-s/--series`).
 
 ````
-usage: pacpush [-h] [-n] [-m] [-s] [-c CONFFILE] [-u] [hosts]
+usage: pacpush [-h] [-n] [-m] [-s] [-c CONFFILE] [-u] [hosts [hosts ...]]
 
 Utility to push this Arch hosts package and AUR caches to other host[s] to
 avoid those other hosts having to download the same new package lists and
@@ -125,9 +125,8 @@ optional arguments:
   -s, --series          Run remote host updates in series not parallel
   -c CONFFILE, --conffile CONFFILE
                         alternative configuration file
-  -u, --updates-aur     just report installed packages with updates pending in
-                        the AUR
-
+  -u, --updates         just report all installed packages with updates
+                        pending, including AUR packages
 ````
 
 ### UPGRADE
