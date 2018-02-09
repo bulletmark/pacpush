@@ -58,7 +58,7 @@ any updated AUR packages at all.
 
 Just install [_pacpush from the
 AUR_](https://aur.archlinux.org/packages/pacpush/) to the local and
-remote hosts and skip to the next section.
+remote hosts.
 
 ### CONFIGURATION
 
