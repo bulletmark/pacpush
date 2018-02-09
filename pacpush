@@ -81,8 +81,16 @@ if args.updates:
         name = str(pkg.get('Name'))
         newver = Version(pkg.get('Version', ''))
         oldver = pkgs.get(name)
-        if oldver and oldver < newver:
-            print(f':: {name} {str(oldver)} -> {str(newver)}')
+        if oldver:
+            # Catch and work around Version bug, see
+            # https://bugs.python.org/issue14894
+            try:
+                update = oldver < newver
+            except TypeError:
+                update = str(oldver) < str(newver)
+
+            if update:
+                print(f':: {name} {oldver} -> {newver}')
 
     sys.exit(0)
 
