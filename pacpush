@@ -38,8 +38,7 @@ args = opt.parse_args()
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
-    cmd = f'pacman {opt}'
-    res = subprocess.run(cmd.split(), universal_newlines=True,
+    res = subprocess.run(f'pacman {opt}'.split(), universal_newlines=True,
             stdout=subprocess.PIPE)
 
     # Ignore pacman return code since it returns non 0 codes even for
@@ -54,7 +53,11 @@ if args.updates:
 
     # Print out version updates for standard packages
     for line in pacman('-Qu'):
-        name, oldver, junk, newver = line.split()
+        name, oldver, junk, *newvers = line.split()
+        if len(newvers) > 1 and 'ignored' in newvers[1]:
+            continue
+
+        newver = newvers[0]
         print(f'{name} {oldver} -> {newver}')
 
     # Create dict of installed AUR packages and versions
