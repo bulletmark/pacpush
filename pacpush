@@ -42,9 +42,8 @@ def pacman(opt):
     res = subprocess.run(cmd.split(), universal_newlines=True,
             stdout=subprocess.PIPE)
 
-    if res.returncode != 0:
-        sys.exit(f'.. exited with error from {cmd}')
-
+    # Ignore pacman return code since it returns non 0 codes even for
+    # valid invocations
     return res.stdout.splitlines()
 
 if args.updates:
