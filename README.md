@@ -56,22 +56,9 @@ any updated AUR packages at all.
 
 ### INSTALLATION
 
-The local host needs _python-ruamel-yaml_ installed.
-The remote hosts need _cower_ installed.
-Both the local and the remote hosts need _rsync_ and _openssh_ installed.
-
-You only need to install `pacpush` on the local host where you are
-pushing packages from. It does not need to be installed on the remote
-host[s] you are pushing to. Most users should just install [_pacpush
-from the AUR_](https://aur.archlinux.org/packages/pacpush/) and skip to
-the next section.
-
-The local host also requires _sudo_, _git_, and _python_ (3.6 or later)
-installed. Then type the following to install this utility.
-
-    git clone http://github.com/bulletmark/pacpush
-    cd pacpush
-    sudo make install (or sudo ./pacpush-setup install)
+Just install [_pacpush from the
+AUR_](https://aur.archlinux.org/packages/pacpush/) to the local and
+remote hosts and skip to the next section.
 
 ### CONFIGURATION
 
@@ -80,10 +67,11 @@ this file to your personal `~/.config/pacpush.conf` if you want to
 change it. Currently the only configuration value is `clonedir` which is
 the location of your AUR helpers download/build directory. This is the
 directory from which AUR packages are rsync'd from the local host to
-remote hosts. Ensure that `clonedir` is set to point to the directory
-your AUR helper is using. E.g. the default is `~/.cache/pacaur` for
-_pacaur_ but this will have to be changed if you are not using _pacaur_.
-Remember to change this location if you change your AUR helper.
+remote hosts. It only needs to be configured on the local host.
+Currently Ensure that `clonedir` is set to point to the directory your
+AUR helper is using. E.g. the default is `~/.cache/pacaur` for _pacaur_
+but this will have to be changed if you are not using _pacaur_. Remember
+to change this location if you change your AUR helper.
 
 ### SSH KEY CONFIGURATION
 
@@ -120,13 +108,12 @@ If you specify multiple hosts then the program will update them in
 parallel (unless you disable this with `-s/--series`).
 
 ````
-usage: pacpush [-h] [-n] [-m] [-s] [-c CONFFILE] hosts [hosts ...]
+usage: pacpush [-h] [-n] [-m] [-s] [-c CONFFILE] [-u] [hosts]
 
 Utility to push this Arch hosts package and AUR caches to other host[s] to
 avoid those other hosts having to download the same new package lists and
 updated packages, at least for common packages. Requires root ssh access to
-other hosts (it is easier with a auth key). Requires cower to be installed on
-all target hosts.
+other hosts (it is easier with a auth key).
 
 positional arguments:
   hosts                 hosts to update
@@ -138,6 +125,9 @@ optional arguments:
   -s, --series          Run remote host updates in series not parallel
   -c CONFFILE, --conffile CONFFILE
                         alternative configuration file
+  -u, --updates-aur     just report installed packages with updates pending in
+                        the AUR
+
 ````
 
 ### UPGRADE

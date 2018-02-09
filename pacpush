@@ -3,15 +3,14 @@
 Utility to push this Arch hosts package and AUR caches to other host[s]
 to avoid those other hosts having to download the same new package lists
 and updated packages, at least for common packages. Requires root ssh
-access to other hosts (it is easier with a auth key). Requires cower to
-be installed on all target hosts.
+access to other hosts (it is easier with a auth key).
 '''
 # Author: Mark Blakeney, Mar 2017.
 
 import sys, os, platform, subprocess, argparse, tempfile, pickle
-import ruamel.yaml as yaml
 from pathlib import Path
 
+AURWEB = 'https://aur.archlinux.org/rpc/'
 PROG = Path(sys.argv[0]).stem
 
 # Conf file containing gesture commands.
@@ -30,12 +29,56 @@ opt.add_argument('-s', '--series', action='store_true',
         help='Run remote host updates in series not parallel')
 opt.add_argument('-c', '--conffile',
         help='alternative configuration file')
-opt.add_argument('hosts', nargs='+', help='hosts to update')
+opt.add_argument('-u', '--updates-aur', action='store_true',
+        help='just report installed packages with updates pending in the AUR')
+opt.add_argument('hosts', nargs='*', help='hosts to update')
 opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()
 
+if args.updates_aur:
+    # Just report installed packages with updates pending in AUR
+    from distutils.version import LooseVersion as Version
+    import requests
+
+    # Get list of installed AUR packages
+    res = subprocess.run(f'pacman -Qm'.split(), universal_newlines=True,
+            stdout=subprocess.PIPE)
+
+    if res.returncode != 0:
+        sys.exit('exited with pacman error')
+
+    # Create dict of installed AUR packages and versions
+    pkgs = {}
+    for pkg in res.stdout.splitlines():
+        name, vers = pkg.split()
+        pkgs[name] = Version(vers)
+
+    # Get info for this list of packages from AURWEB
+    data = {'v': 5, 'type': 'info', 'arg[]': list(pkgs.keys())}
+
+    try:
+        r = requests.get(AURWEB, params=data)
+    except Exception as e:
+        sys.exit(f'AUR error: {str(e)}')
+
+    if r.status_code != requests.codes.ok:
+        sys.exit(f'AUR returned error: {r.text}')
+
+    # Report any version updates
+    for pkg in r.json()['results']:
+        name = str(pkg.get('Name'))
+        newver = Version(pkg.get('Version', ''))
+        oldver =  pkgs.get(name)
+        if oldver and oldver < newver:
+            print(f':: {name} {str(oldver)} -> {str(newver)}')
+    sys.exit(0)
+
+if not args.hosts:
+    opt.error('Must specify at least one host')
+
 # If not invoked as root then re-invoke ourself using sudo
 if os.geteuid() != 0:
+    import ruamel.yaml as yaml
     # Search for configuration file. Use file given as command line
     # argument, else look for file in search dir order.
     if args.conffile:
@@ -118,7 +161,7 @@ def synchost(host):
 
     print(f'Getting list of required package updates from {host} ..')
     res = subprocess.run(f'/usr/bin/ssh {host} pacman -Qu; '
-            f'cower -u --color=never'.split(),
+            'pacpush -u'.split(),
             universal_newlines=True, stdout=subprocess.PIPE)
 
     filelist = []
