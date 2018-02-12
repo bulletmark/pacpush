@@ -67,10 +67,10 @@ if args.updates:
         pkgs[name] = Version(vers)
 
     # Get info for this list of packages from AURWEB
-    data = {'v': 5, 'type': 'info', 'arg[]': list(pkgs.keys())}
+    params = {'v': 5, 'type': 'info', 'arg[]': list(pkgs.keys())}
 
     try:
-        r = requests.get(AURWEB, params=data)
+        r = requests.get(AURWEB, params=params)
     except Exception as e:
         sys.exit(f'AURWEB error: {str(e)}')
 
@@ -120,7 +120,8 @@ if os.geteuid() != 0:
     with conffile.open() as fp:
         conf = yaml.safe_load(fp)
 
-    clonedir = Path(conf.get('clonedir', f'{USERCACHE}/pacaur')).expanduser()
+    dirstr = conf.get('clonedir')
+    clonedir = Path(dirstr).expanduser() if dirstr else None
 
     # Save ordinary user environment to reference for running as root
     fp = tempfile.NamedTemporaryFile()
@@ -201,7 +202,7 @@ def synchost(host):
         # f'{host} requires update of {name} from {oldver} to {newver}'
         if aur:
             # Sync the entire clone dir for an AUR package
-            tpath = clonedir.joinpath(name)
+            tpath = clonedir.joinpath(name) if clonedir else None
             desc = f'AUR {name}/'
         else:
             # Can't be sure of the file (package) extension so get the
