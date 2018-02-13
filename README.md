@@ -70,8 +70,9 @@ directory from which AUR packages are rsync'd from the local host to
 remote hosts. It only needs to be configured on the local host.
 Currently Ensure that `clonedir` is set to point to the directory your
 AUR helper is using. E.g. the default is `~/.cache/pacaur` for _pacaur_
-but this will have to be changed if you are not using _pacaur_. Remember
-to change this location if you change your AUR helper.
+but this will have to be changed if you are not using _pacaur_. You must
+change this location if you change AUR helpers. See the examples for
+other helpers in the default configuration file.
 
 ### SSH KEY CONFIGURATION
 
@@ -108,10 +109,11 @@ If you specify multiple hosts then the program will update them in
 parallel (unless you disable this with `-s/--series`).
 
 ````
-usage: pacpush [-h] [-n] [-m] [-s] [-c CONFFILE] [-u] [hosts [hosts ...]]
+usage: pacpush [-h] [-n] [-m] [-S] [-c CONFFILE] [-u] [-s] [-a]
+               [hosts [hosts ...]]
 
-Utility to push this Arch hosts package and AUR caches to other host[s] to
-avoid those other hosts having to download the same new package lists and
+Utility to push this Arch hosts system and AUR package caches to other host[s]
+to avoid those other hosts having to download the same new package lists and
 updated packages, at least for common packages. Requires root ssh access to
 other hosts (it is easier with a auth key).
 
@@ -122,11 +124,13 @@ optional arguments:
   -h, --help            show this help message and exit
   -n, --dryrun          dry run only
   -m, --no-machcheck    do not check machine type compatibility
-  -s, --series          Run remote host updates in series not parallel
+  -S, --series          run remote host updates in series not parallel
   -c CONFFILE, --conffile CONFFILE
                         alternative configuration file
   -u, --updates         just report all installed packages with updates
                         pending, including AUR packages
+  -s, --sys-only        only sync/report system packages, not AUR
+  -a, --aur-only        only sync/report AUR packages, not system
 ````
 
 ### UPGRADE

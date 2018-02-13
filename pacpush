@@ -1,23 +1,29 @@
 #!/usr/bin/python
 '''
-Utility to push this Arch hosts package and AUR caches to other host[s]
-to avoid those other hosts having to download the same new package lists
-and updated packages, at least for common packages. Requires root ssh
-access to other hosts (it is easier with a auth key).
+Utility to push this Arch hosts system and AUR package caches to other
+host[s] to avoid those other hosts having to download the same new
+package lists and updated packages, at least for common packages.
+Requires root ssh access to other hosts (it is easier with a auth key).
 '''
 # Author: Mark Blakeney, Mar 2017.
 
 import sys, os, platform, subprocess, argparse, tempfile, pickle
 from pathlib import Path
 
-AURWEB = 'https://aur.archlinux.org/rpc'
-PROG = Path(sys.argv[0]).stem
+# Define paths of interest for pacman packages
+PACLIST = Path('/var/lib/pacman/sync')
+PACPKGS = Path('/var/cache/pacman/pkg')
 
-# Conf file containing gesture commands.
-# Search first for user file then system file.
+# Where we fetch AUR versions from
+AURWEB = 'https://aur.archlinux.org/rpc'
+
+HOST = platform.node()
+MACH = platform.machine()
+
+# Conf file, search first for user file then system file
+PROG = Path(sys.argv[0]).stem
 CONFNAME = f'{PROG}.conf'
 USERCNF = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
-USERCACHE = os.getenv('XDG_CACHE_HOME', os.path.expanduser('~/.cache'))
 CONFDIRS = (USERCNF, '/etc')
 
 # Process command line options
@@ -25,16 +31,21 @@ opt = argparse.ArgumentParser(description=__doc__)
 opt.add_argument('-n', '--dryrun', action='store_true', help='dry run only')
 opt.add_argument('-m', '--no-machcheck', action='store_true',
         help='do not check machine type compatibility')
-opt.add_argument('-s', '--series', action='store_true',
-        help='Run remote host updates in series not parallel')
+opt.add_argument('-S', '--series', action='store_true',
+        help='run remote host updates in series not parallel')
 opt.add_argument('-c', '--conffile',
         help='alternative configuration file')
 opt.add_argument('-u', '--updates', action='store_true',
         help='just report all installed packages with updates pending, '
         'including AUR packages')
+opt.add_argument('-s', '--sys-only', action='store_true',
+        help='only sync/report system packages, not AUR')
+opt.add_argument('-a', '--aur-only', action='store_true',
+        help='only sync/report AUR packages, not system')
 opt.add_argument('hosts', nargs='*', help='hosts to update')
 opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()
+dryrun = '-n ' if args.dryrun else ''
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
@@ -45,20 +56,23 @@ def pacman(opt):
     # valid invocations
     return res.stdout.splitlines()
 
-if args.updates:
-    # Just report all installed native and AUR packages with updates
-    # pending.
+def report_updates():
+    'Report all installed native and AUR packages with updates pending'
     from distutils.version import LooseVersion as Version
     import requests
 
     # Print out version updates for standard packages
-    for line in pacman('-Qu'):
-        name, oldver, junk, *newvers = line.split()
-        if len(newvers) > 1 and 'ignored' in newvers[1]:
-            continue
+    if not args.aur_only:
+        for line in pacman('-Qu'):
+            name, oldver, junk, *newvers = line.split()
+            if len(newvers) > 1 and 'ignored' in newvers[1]:
+                continue
 
-        newver = newvers[0]
-        print(f'{name} {oldver} -> {newver}')
+            newver = newvers[0]
+            print(f'{name} {oldver} -> {newver}')
+
+    if args.sys_only:
+        return
 
     # Create dict of installed AUR packages and versions
     pkgs = {}
@@ -72,14 +86,14 @@ if args.updates:
     try:
         r = requests.get(AURWEB, params=params)
     except Exception as e:
-        sys.exit(f'AURWEB error: {str(e)}')
+        return f'AURWEB error: {str(e)}'
 
     if r.status_code != requests.codes.ok:
-        sys.exit(f'AURWEB returned error: {r.text}')
+        return f'AURWEB returned error: {r.text}'
 
     # Now print out version updates for AUR packages
     # Follow cower format for prepending AUR lines with ':: '.
-    for pkg in r.json()['results']:
+    for pkg in r.json().get('results', []):
         name = str(pkg.get('Name'))
         newver = Version(pkg.get('Version', ''))
         oldver = pkgs.get(name)
@@ -94,20 +108,15 @@ if args.updates:
             if update:
                 print(f':: {name} {oldver} -> {newver}')
 
-    sys.exit(0)
-
-if not args.hosts:
-    opt.error('Must specify at least one host')
-
-# If not invoked as root then re-invoke ourself using sudo
-if os.geteuid() != 0:
+def run_user():
+    'Run as user to read user config and save environment'
     import ruamel.yaml as yaml
     # Search for configuration file. Use file given as command line
     # argument, else look for file in search dir order.
     if args.conffile:
         conffile = Path(args.conffile)
         if not conffile.exists():
-            sys.exit(f'Conf file "{conffile}" does not exist.')
+            return f'Conf file "{conffile}" does not exist.'
     else:
         for confdir in CONFDIRS:
             conffile = Path(confdir, CONFNAME)
@@ -115,7 +124,7 @@ if os.geteuid() != 0:
                 break
         else:
             dirs = ' or '.join(CONFDIRS)
-            sys.exit(f'No file {CONFNAME} in {dirs}.')
+            return f'No file {CONFNAME} in {dirs}.'
 
     with conffile.open() as fp:
         conf = yaml.safe_load(fp)
@@ -133,26 +142,9 @@ if os.geteuid() != 0:
     sock = os.getenv('SSH_AUTH_SOCK')
     cmd = ['/usr/bin/sudo', f'SSH_AUTH_SOCK={sock}'] + sys.argv + \
             [f'--env={fp.name}']
-    sys.exit(subprocess.run(cmd).returncode)
+    return subprocess.run(cmd).returncode
 
-SUDO_USER = os.getenv('SUDO_USER')
-if not SUDO_USER:
-    sys.exit('Do not run as root. Run directly as your normal user.')
-
-# Load calling user's environment for reference. This is a hidden
-# argument passed programmatically from above.
-with open(args.env, 'rb') as fp:
-    clonedir = pickle.load(fp)
-
-# Define paths of interest for pacman
-PACLIST = Path('/var/lib/pacman/sync')
-PACPKGS = Path('/var/cache/pacman/pkg')
-
-HOST = platform.node()
-MACH = platform.machine()
-dryrun = '-n ' if args.dryrun else ''
-
-def synchost(host):
+def synchost(host, clonedir):
     'Sync to given host'
     if not args.no_machcheck:
         res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
@@ -173,18 +165,21 @@ def synchost(host):
     # Push the current package lists to the host then work out what
     # package updates are required by this host. Then push all new
     # packages it requires that we already hold, including AUR files.
-    print(f'{HOST} syncing {MACH} package lists to {host} ..')
-    res = subprocess.run(
-            f'/usr/bin/rsync -aRO --info=name1 {dryrun}'
-            f'{PACLIST} {host}:/'.split())
+    if not args.aur_only:
+        print(f'{HOST} syncing {MACH} package lists to {host} ..')
+        res = subprocess.run(
+                f'/usr/bin/rsync -aRO --info=name1 {dryrun}'
+                f'{PACLIST} {host}:/'.split())
 
-    if res.returncode != 0:
-        print(f'{HOST} failed to sync package lists to {host}.',
-                file=sys.stderr)
-        return
+        if res.returncode != 0:
+            print(f'{HOST} failed to sync package lists to {host}.',
+                    file=sys.stderr)
+            return
 
     print(f'Getting list of required package updates from {host} ..')
-    res = subprocess.run(f'/usr/bin/ssh {host} pacpush -u'.split(),
+    aopt = ' --aur-only' if args.aur_only else ''
+    sopt = ' --sys-only' if args.sys_only or not clonedir else ''
+    res = subprocess.run(f'/usr/bin/ssh {host} pacpush{aopt}{sopt} -u'.split(),
             universal_newlines=True, stdout=subprocess.PIPE)
 
     filelist = []
@@ -230,15 +225,39 @@ def synchost(host):
     else:
         print(f'{host} is already up to date.')
 
-# May as well do in same process if only a single remote host
-do_in_series = args.series or len(args.hosts) == 1
+def run_root():
+    'Run as root to do updates'
+    # Load calling user's environment for reference. This is a hidden
+    # argument passed programmatically.
+    with open(args.env, 'rb') as fp:
+        clonedir = pickle.load(fp)
 
-# For each host specified on the command line ..
-for host in args.hosts:
-    if do_in_series:
-        synchost(host)
-    else:
-        # Do in parallel ..
-        from multiprocessing import Process
-        p = Process(target=synchost, args=(host,))
-        p.start()
+    # May as well do in same process if only a single remote host
+    do_in_series = args.series or len(args.hosts) == 1
+
+    # For each host specified on the command line ..
+    for host in args.hosts:
+        if do_in_series:
+            synchost(host, clonedir)
+        else:
+            # Do in parallel ..
+            from multiprocessing import Process
+            p = Process(target=synchost, args=(host, clonedir))
+            p.start()
+
+# Main processing ..
+if args.updates:
+    sys.exit(report_updates())
+
+if not args.hosts:
+    opt.error('Must specify at least one host')
+
+# If not invoked as root then re-invoke ourself using sudo
+if os.geteuid() != 0:
+    sys.exit(run_user())
+
+if not os.getenv('SUDO_USER') or not args.env:
+    sys.exit('Do not run as root. Run directly as your normal user.')
+
+# From here on we are running as root ..
+sys.exit(run_root())
