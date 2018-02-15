@@ -106,7 +106,7 @@ and will push the cached AUR build directory of the invoking
 user (i.e. the _clonedir_ location from the configuration file).
 
 If you specify multiple hosts then the program will update them in
-parallel (unless you disable this with `-s/--series`).
+parallel (unless you disable this with `-S/--series`).
 
 ````
 usage: pacpush [-h] [-n] [-m] [-S] [-c CONFFILE] [-u] [-s] [-a]
