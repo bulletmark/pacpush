@@ -103,7 +103,7 @@ You run it directly on the command line as your normal user (not as root
 and not using sudo explicitly) specifying as arguments the host, or
 hosts, you want to update. The utility will re-invoke itself using sudo
 and will push the cached AUR build directory of the invoking
-user (i.e. the _clonedir_ location from the configuration file).
+user (i.e. the `clonedir` location from the configuration file).
 
 If you specify multiple hosts then the program will update them in
 parallel (unless you disable this with `-S/--series`).
