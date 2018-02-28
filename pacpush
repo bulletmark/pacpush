@@ -129,12 +129,19 @@ def run_user():
     with conffile.open() as fp:
         conf = yaml.safe_load(fp)
 
-    dirstr = conf.get('clonedir')
-    clonedir = Path(dirstr).expanduser() if dirstr else None
+    # Clonedir may either be a single dir, or a list of dirs
+    clonedir = conf.get('clonedir', [])
+    if isinstance(clonedir, str):
+        clonedirs = [Path(clonedir).expanduser()]
+    else:
+        clonedirs = [Path(c).expanduser() for c in clonedir]
+
+    # Can immediately filter out dirs which don't exist
+    clonedirs = [c for c in clonedirs if c.exists()]
 
     # Save ordinary user environment to reference for running as root
     fp = tempfile.NamedTemporaryFile()
-    pickle.dump(clonedir, fp)
+    pickle.dump(clonedirs, fp)
     fp.flush()
 
     # Pass ssh auth so that root uses sudo user's ssh cached key and
@@ -144,7 +151,7 @@ def run_user():
             [f'--env={fp.name}']
     return subprocess.run(cmd).returncode
 
-def synchost(host, clonedir):
+def synchost(host, clonedirs):
     'Sync to given host'
     if not args.no_machcheck:
         res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
@@ -178,12 +185,12 @@ def synchost(host, clonedir):
 
     print(f'Getting list of required package updates from {host} ..')
     aopt = ' --aur-only' if args.aur_only else ''
-    sopt = ' --sys-only' if args.sys_only or not clonedir else ''
+    sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
     res = subprocess.run(f'/usr/bin/ssh {host} pacpush{aopt}{sopt} -u'.split(),
             universal_newlines=True, stdout=subprocess.PIPE)
 
     filelist = []
-    pkg = None
+    name = None
     for line in res.stdout.strip().splitlines():
         if line.startswith(':'):
             aur = True
@@ -192,25 +199,30 @@ def synchost(host, clonedir):
             aur = False
             name, oldver, junk, newver = line.split()
 
-        pkg = f'{name}-{newver}'
-
         # f'{host} requires update of {name} from {oldver} to {newver}'
         if aur:
             # Sync the entire clone dir for an AUR package
-            tpath = clonedir.joinpath(name) if clonedir else None
-            desc = f'AUR {name}/'
+            found = False
+            for clonedir in clonedirs:
+                dpkg = clonedir.joinpath(name)
+                if dpkg.exists():
+                    print(f'> {HOST} has AUR {clonedir.name}/{name} for {host}')
+                    filelist.append(dpkg)
+                    found = True
+
+            if not found:
+                print(f'> {HOST} does not have AUR {name} for {host}')
         else:
             # Can't be sure of the file (package) extension so get the
             # latest file by time.
-            tpath = max(PACPKGS.glob(f'{pkg}-*'),
+            pkg = f'{name}-{newver}'
+            dpkg = max(PACPKGS.glob(f'{pkg}-*'),
                     key=lambda p: p.stat().st_mtime, default=None)
-            desc = pkg
-
-        if tpath and tpath.exists():
-            print(f'> {HOST} has {desc} for {host}')
-            filelist.append(tpath)
-        else:
-            print(f'> {HOST} does not have {desc} for {host}')
+            if dpkg:
+                print(f'> {HOST} has {pkg} for {host}')
+                filelist.append(dpkg)
+            else:
+                print(f'> {HOST} does not have {pkg} for {host}')
 
     if filelist:
         print(f'{HOST} syncing updated packages to {host} ..')
@@ -220,7 +232,7 @@ def synchost(host, clonedir):
             subprocess.run(
                 f'/usr/bin/rsync -arRO --info=name1 {dryrun}'
                 f'--files-from {fp.name} / {host}:/'.split())
-    elif pkg:
+    elif name:
         print(f'{HOST} does not have any packages {host} requires.')
     else:
         print(f'{host} is already up to date.')
@@ -230,7 +242,7 @@ def run_root():
     # Load calling user's environment for reference. This is a hidden
     # argument passed programmatically.
     with open(args.env, 'rb') as fp:
-        clonedir = pickle.load(fp)
+        clonedirs = pickle.load(fp)
 
     # May as well do in same process if only a single remote host
     do_in_series = args.series or len(args.hosts) == 1
@@ -238,11 +250,11 @@ def run_root():
     # For each host specified on the command line ..
     for host in args.hosts:
         if do_in_series:
-            synchost(host, clonedir)
+            synchost(host, clonedirs)
         else:
             # Do in parallel ..
             from multiprocessing import Process
-            p = Process(target=synchost, args=(host, clonedir))
+            p = Process(target=synchost, args=(host, clonedirs))
             p.start()
 
 # Main processing ..
