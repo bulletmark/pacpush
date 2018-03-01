@@ -42,6 +42,9 @@ Note that `pacpush` should work with any AUR helper so long as you set
 `clonedir` appropriately in your configuration file, see the
 CONFIGURATION section below for details.
 
+The latest version and documentation is available at
+https://github.com/bulletmark/pacpush.
+
 ### COMPARISION TO PACSERVE
 
 To solve this problem, I originally started using
