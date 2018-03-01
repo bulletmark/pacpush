@@ -68,11 +68,10 @@ change it. Currently the only configuration value is `clonedir` which is
 the location of your AUR helpers download/build directory. This is the
 directory from which AUR packages are rsync'd from the local host to
 remote hosts. It only needs to be configured on the local host.
-Currently Ensure that `clonedir` is set to point to the directory your
-AUR helper is using. E.g. the default is `~/.cache/pacaur` for _pacaur_
-but this will have to be changed if you are not using _pacaur_. You must
-change this location if you change AUR helpers. See the examples for
-other helpers in the default configuration file.
+`clonedir` can be set to a single directory, or a list of directories.
+Ensure that `clonedir` is set to, or at least contains, the directory
+your AUR helper is using. See the default setting and examples in the
+default configuration file.
 
 ### SSH KEY CONFIGURATION
 
@@ -103,7 +102,7 @@ You run it directly on the command line as your normal user (not as root
 and not using sudo explicitly) specifying as arguments the host, or
 hosts, you want to update. The utility will re-invoke itself using sudo
 and will push the cached AUR build directory of the invoking
-user (i.e. the `clonedir` location from the configuration file).
+user (i.e. the `clonedir` location[s] from the configuration file).
 
 If you specify multiple hosts then the program will update them in
 parallel (unless you disable this with `-S/--series`).
