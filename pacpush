@@ -193,26 +193,23 @@ def synchost(host, clonedirs):
     name = None
     for line in res.stdout.strip().splitlines():
         if line.startswith(':'):
-            aur = True
+            # AUR package:
             junk, name, oldver, junk, newver = line.split()
-        else:
-            aur = False
-            name, oldver, junk, newver = line.split()
 
-        # f'{host} requires update of {name} from {oldver} to {newver}'
-        if aur:
-            # Sync the entire clone dir for an AUR package
-            found = False
+            # Sync the entire clone dir[s], if it exists
+            count = len(filelist)
             for clonedir in clonedirs:
                 dpkg = clonedir.joinpath(name)
                 if dpkg.exists():
                     print(f'> {HOST} has AUR {clonedir.name}/{name} for {host}')
                     filelist.append(dpkg)
-                    found = True
 
-            if not found:
+            if count == len(filelist):
                 print(f'> {HOST} does not have AUR {name} for {host}')
         else:
+            # System package:
+            name, oldver, junk, newver = line.split()
+
             # Can't be sure of the file (package) extension so get the
             # latest file by time.
             pkg = f'{name}-{newver}'
