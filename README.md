@@ -74,7 +74,8 @@ remote hosts. It only needs to be configured on the local host.
 `clonedir` can be set to a single directory, or a list of directories.
 Ensure that `clonedir` is set to, or at least contains, the directory
 your AUR helper is using. See the default setting and examples in the
-default configuration file.
+default configuration file. If you use multiple AUR helpers then set
+each one's directory in a list in `clonedir`.
 
 ### SSH KEY CONFIGURATION
 
