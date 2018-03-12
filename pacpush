@@ -31,8 +31,9 @@ opt = argparse.ArgumentParser(description=__doc__)
 opt.add_argument('-n', '--dryrun', action='store_true', help='dry run only')
 opt.add_argument('-m', '--no-machcheck', action='store_true',
         help='do not check machine type compatibility')
-opt.add_argument('-S', '--series', action='store_true',
-        help='run remote host updates in series not parallel')
+opt.add_argument('-p', '--parallel-count', type=int, default=10,
+        help='max number of hosts to update in parallel. '
+        'Default is %(default)d.')
 opt.add_argument('-c', '--conffile',
         help='alternative configuration file')
 opt.add_argument('-u', '--updates', action='store_true',
@@ -240,18 +241,15 @@ def run_root():
     with open(args.env, 'rb') as fp:
         clonedirs = pickle.load(fp)
 
-    # May as well do in same process if only a single remote host
-    do_in_series = args.series or len(args.hosts) == 1
-
-    # For each host specified on the command line ..
-    for host in args.hosts:
-        if do_in_series:
-            synchost(host, clonedirs)
-        else:
-            # Do in parallel ..
-            from multiprocessing import Process
-            p = Process(target=synchost, args=(host, clonedirs))
-            p.start()
+    if len(args.hosts) == 1 or args.parallel_count <= 1:
+        # May as well do in same process if only 1 host or doing in series
+        for h in args.hosts:
+            synchost(h, clonedirs)
+    else:
+        # Farm out the jobs to a pool of processes
+        import multiprocessing
+        with multiprocessing.Pool(args.parallel_count) as p:
+            p.starmap(synchost, ((h, clonedirs) for h in args.hosts))
 
 # Main processing ..
 if args.updates:

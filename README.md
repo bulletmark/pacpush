@@ -109,10 +109,11 @@ and will push the cached AUR build directory of the invoking
 user (i.e. the `clonedir` location[s] from the configuration file).
 
 If you specify multiple hosts then the program will update them in
-parallel (unless you disable this with `-S/--series`).
+parallel. You can limit the number of parallel updates using the
+`-p/--parallel-count` option.
 
 ````
-usage: pacpush [-h] [-n] [-m] [-S] [-c CONFFILE] [-u] [-s] [-a]
+usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s] [-a]
                [hosts [hosts ...]]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
@@ -127,7 +128,9 @@ optional arguments:
   -h, --help            show this help message and exit
   -n, --dryrun          dry run only
   -m, --no-machcheck    do not check machine type compatibility
-  -S, --series          run remote host updates in series not parallel
+  -p PARALLEL_COUNT, --parallel-count PARALLEL_COUNT
+                        max number of hosts to update in parallel. Default is
+                        10.
   -c CONFFILE, --conffile CONFFILE
                         alternative configuration file
   -u, --updates         just report all installed packages with updates
