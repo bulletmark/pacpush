@@ -109,8 +109,8 @@ and will push the cached AUR build directory of the invoking
 user (i.e. the `clonedir` location[s] from the configuration file).
 
 If you specify multiple hosts then the program will update them in
-parallel. You can limit the number of parallel updates using the
-`-p/--parallel-count` option.
+parallel. You can limit, or increase, the number of parallel updates
+using the `-p/--parallel-count` option.
 
 ````
 usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s] [-a]
