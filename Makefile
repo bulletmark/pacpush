@@ -17,13 +17,10 @@ DOC = README.md
 DOCOUT = $(DOC:.md=.html)
 
 all:
-	@echo "Type sudo make install|uninstall|doc|check|clean"
+	@echo "Type make doc|check|clean, or sudo make install"
 
 install:
-	@./pacpush-setup -d "$(DESTDIR)" install
-
-uninstall:
-	@./pacpush-setup -d "$(DESTDIR)" uninstall
+	python setup.py install --root=$(or $(DESTDIR),/)
 
 doc:	$(DOCOUT)
 
@@ -34,4 +31,4 @@ $(DOCOUT): $(DOC)
 	markdown $< >$@
 
 clean:
-	rm -rf $(DOCOUT)
+	rm -rf $(DOCOUT) *.egg-info build/ dist/ __pycache__/
