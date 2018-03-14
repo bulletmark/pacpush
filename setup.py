@@ -5,9 +5,9 @@
 from pathlib import Path
 from setuptools import setup
 
+name = 'pacpush'
 here = Path(__file__).resolve().parent
 readme = here.joinpath('README.md').read_text()
-name = str(here.name)
 
 setup(
     name=name,
