@@ -20,7 +20,7 @@ all:
 	@echo "Type make doc|check|clean, or sudo make install"
 
 install:
-	python setup.py install --root=$(or $(DESTDIR),/)
+	python setup.py install --root=$(or $(DESTDIR),/) --optimize=1
 
 doc:	$(DOCOUT)
 
