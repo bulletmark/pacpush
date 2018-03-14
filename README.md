@@ -139,12 +139,6 @@ optional arguments:
   -a, --aur-only        only sync/report AUR packages, not system
 ````
 
-### UPGRADE
-
-    cd pacpush  # Source dir, as above
-    git pull
-    sudo make install (or sudo ./pacpush-setup install)
-
 ### LICENSE
 
 Copyright (C) 2017 Mark Blakeney. This program is distributed under the

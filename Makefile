@@ -14,21 +14,26 @@
 
 DOC = README.md
 
+NAME = pacpush
 DOCOUT = $(DOC:.md=.html)
 
 all:
-	@echo "Type make doc|check|clean, or sudo make install"
+	@echo "Type sudo make install|uninstall, or make doc|check|clean"
 
 install:
-	python setup.py install --root=$(or $(DESTDIR),/) --optimize=1
+	@python setup.py install --root=$(or $(DESTDIR),/) --optimize=1
+
+uninstall:
+	@rm -vrf /usr/bin/$(NAME) /etc/$(NAME).conf \
+	    /usr/lib/python*/site-packages/*$(NAME)*
 
 doc:	$(DOCOUT)
 
 check:
-	flake8 pacpush
+	flake8 $(NAME)
 
 $(DOCOUT): $(DOC)
 	markdown $< >$@
 
 clean:
-	rm -rf $(DOCOUT) *.egg-info build/ dist/ __pycache__/
+	@rm -vrf $(DOCOUT) *.egg-info build/ dist/ __pycache__/
