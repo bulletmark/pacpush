@@ -24,14 +24,14 @@ install:
 	@python setup.py install --root=$(or $(DESTDIR),/) --optimize=1
 
 uninstall:
-	@rm -vrf /usr/bin/$(NAME) /etc/$(NAME).conf \
+	@rm -vrf /usr/bin/$(NAME)* /etc/$(NAME).conf \
 	    /usr/lib/python*/site-packages/*$(NAME)* \
 	    /usr/lib/python*/site-packages/*/*$(NAME)*
 
 doc:	$(DOCOUT)
 
 check:
-	flake8 $(NAME)
+	flake8 $(NAME).py $(NAME) setup.py
 
 $(DOCOUT): $(DOC)
 	markdown $< >$@

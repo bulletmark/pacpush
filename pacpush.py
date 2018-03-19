@@ -82,7 +82,7 @@ def report_updates():
         pkgs[name] = Version(vers)
 
     # Get info for this list of packages from AURWEB
-    params = {'v': 5, 'type': 'info', 'arg[]': list(pkgs.keys())}
+    params = {'v': 5, 'type': 'info', 'arg[]': list(pkgs)}
 
     try:
         r = requests.get(AURWEB, params=params)

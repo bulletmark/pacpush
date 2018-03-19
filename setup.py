@@ -2,11 +2,12 @@
 # Setup script to install this package.
 # M.Blakeney, Mar 2018.
 
+import re
 from pathlib import Path
 from setuptools import setup
 
-name = 'pacpush'
 here = Path(__file__).resolve().parent
+name = re.sub(r'-.*', '', here.stem)
 readme = here.joinpath('README.md').read_text()
 
 setup(
