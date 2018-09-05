@@ -1,3 +1,4 @@
 #!/usr/bin/python
-import sys, pacpush
-sys.exit(pacpush.main())
+from sys import exit
+from pacpush import main
+exit(main())
