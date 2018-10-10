@@ -154,36 +154,40 @@ def run_user():
 
 def synchost(host, clonedirs):
     'Sync to given host'
+    def log(error, child, msg):
+        'Log messages for update to host'
+        fp = sys.stderr if error else None
+        lead = '* ' if child else ''
+        print(f'{lead}{HOST} -> {host}: {msg}', file=fp)
+
     if not args.no_machcheck:
         res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
                 universal_newlines=True, stdout=subprocess.PIPE)
 
         if res.returncode != 0:
-            print(f'{HOST} failed to ssh to {host}.\nHave you set up '
-                    f'root ssh access to {host}?', file=sys.stderr)
+            log(1, 0, 'failed to ssh.\n'
+                    f'Have you set up root ssh access to {host}?')
             return
 
         hostmach = res.stdout.strip()
         if hostmach != MACH:
-            print(f'This {HOST} type={MACH} does not match '
-                    f'{host} type={hostmach}.', file=sys.stderr)
+            log(1, 0, f'type={MACH} does not match {host} type={hostmach}.')
             return
 
     # Push the current package lists to the host then work out what
     # package updates are required by this host. Then push all new
     # packages it requires that we already hold, including AUR files.
     if not args.aur_only:
-        print(f'{HOST} syncing {MACH} package lists to {host} ..')
+        log(0, 0, f'syncing {MACH} package lists ..')
         res = subprocess.run(
                 f'/usr/bin/rsync -aRO --info=name1 {dryrun}'
                 f'{PACLIST} {host}:/'.split())
 
         if res.returncode != 0:
-            print(f'{HOST} failed to sync package lists to {host}.',
-                    file=sys.stderr)
+            log(1, 0, 'failed to sync package lists.')
             return
 
-    print(f'Getting list of required package updates from {host} ..')
+    log(0, 0, f'getting list of required package updates from {host} ..')
     aopt = ' --aur-only' if args.aur_only else ''
     sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
     res = subprocess.run(f'/usr/bin/ssh {host} pacpush{aopt}{sopt} -u'.split(),
@@ -201,11 +205,11 @@ def synchost(host, clonedirs):
             for clonedir in clonedirs:
                 dpkg = clonedir.joinpath(name)
                 if dpkg.exists():
-                    print(f'> {HOST} has AUR {clonedir.name}/{name} for {host}')
+                    log(0, 1, f'has AUR {clonedir.name}/{name} for {host}')
                     filelist.append(dpkg)
 
             if count == len(filelist):
-                print(f'> {HOST} does not have AUR {name} for {host}')
+                log(0, 1, f'does not have AUR {name} for {host}')
         else:
             # System package:
             name, oldver, junk, newver = line.split()
@@ -216,13 +220,13 @@ def synchost(host, clonedirs):
             dpkg = max(PACPKGS.glob(f'{pkg}-*'),
                     key=lambda p: p.stat().st_mtime, default=None)
             if dpkg:
-                print(f'> {HOST} has {pkg} for {host}')
+                log(0, 1, f'has {pkg} for {host}')
                 filelist.append(dpkg)
             else:
-                print(f'> {HOST} does not have {pkg} for {host}')
+                log(0, 1, f'does not have {pkg} for {host}')
 
     if filelist:
-        print(f'{HOST} syncing updated packages to {host} ..')
+        log(0, 0, 'syncing updated packages ..')
         with tempfile.NamedTemporaryFile() as fp:
             fp.writelines(bytes(l) + b'\n' for l in filelist)
             fp.flush()
@@ -230,9 +234,9 @@ def synchost(host, clonedirs):
                 f'/usr/bin/rsync -arRO --info=name1 {dryrun}'
                 f'--files-from {fp.name} / {host}:/'.split())
     elif name:
-        print(f'{HOST} does not have any packages {host} requires.')
+        log(0, 0, f'does not have any packages {host} requires.')
     else:
-        print(f'{host} is already up to date.')
+        log(0, 0, f'{host} is already up to date.')
 
 def run_root():
     'Run as root to do updates'
@@ -247,8 +251,8 @@ def run_root():
             synchost(h, clonedirs)
     else:
         # Farm out the jobs to a pool of processes
-        import multiprocessing
-        with multiprocessing.Pool(args.parallel_count) as p:
+        from multiprocessing import Pool
+        with Pool(args.parallel_count) as p:
             p.starmap(synchost, ((h, clonedirs) for h in args.hosts))
 
 def main():
