@@ -8,6 +8,7 @@ Requires root ssh access to other hosts (it is easier with a auth key).
 # Author: Mark Blakeney, Mar 2017.
 
 import sys, os, platform, subprocess, argparse, tempfile, pickle
+import multiprocessing
 from pathlib import Path
 
 # Define paths of interest for pacman packages
@@ -152,13 +153,18 @@ def run_user():
             [f'--env={fp.name}']
     return subprocess.run(cmd).returncode
 
+lock = multiprocessing.Lock()
+
 def synchost(host, clonedirs):
     'Sync to given host'
     def log(error, child, msg):
         'Log messages for update to host'
-        fp = sys.stderr if error else None
+        fp = sys.stderr if error else sys.stdout
         lead = '* ' if child else ''
-        print(f'{lead}{HOST} -> {host}: {msg}', file=fp)
+        txt = f'{lead}{HOST} -> {host}: {msg}\n'
+        with lock:
+            fp.write(txt)
+            fp.flush()
 
     if not args.no_machcheck:
         res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
@@ -251,8 +257,7 @@ def run_root():
             synchost(h, clonedirs)
     else:
         # Farm out the jobs to a pool of processes
-        from multiprocessing import Pool
-        with Pool(args.parallel_count) as p:
+        with multiprocessing.Pool(args.parallel_count) as p:
             p.starmap(synchost, ((h, clonedirs) for h in args.hosts))
 
 def main():
