@@ -2,8 +2,8 @@
 '''
 Utility to push this Arch hosts system and AUR package caches to other
 host[s] to avoid those other hosts having to download the same new
-package lists and updated packages, at least for common packages.
-Requires root ssh access to other hosts (it is easier with a auth key).
+package lists and updated packages, at least for shared common packages.
+Requires root ssh access to other hosts (it is easier with an auth key).
 '''
 # Author: Mark Blakeney, Mar 2017.
 

@@ -118,8 +118,8 @@ usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s] [-a]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
 to avoid those other hosts having to download the same new package lists and
-updated packages, at least for common packages. Requires root ssh access to
-other hosts (it is easier with a auth key).
+updated packages, at least for shared common packages. Requires root ssh
+access to other hosts (it is easier with an auth key).
 
 positional arguments:
   hosts                 hosts to update
