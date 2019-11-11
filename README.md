@@ -65,17 +65,18 @@ remote hosts.
 
 ### CONFIGURATION
 
-The default configuration file is installed to `/etc/pacpush.conf`. Copy
-this file to your personal `~/.config/pacpush.conf` if you want to
-change it. Currently the only configuration value is `clonedir` which is
-the location of your AUR helpers download/build directory. This is the
-directory from which AUR packages are rsync'd from the local host to
-remote hosts. It only needs to be configured on the local host.
-`clonedir` can be set to a single directory, or a list of directories.
-Ensure that `clonedir` is set to, or at least contains, the directory
-your AUR helper is using. See the default setting and examples in the
-default configuration file. If you use multiple AUR helpers then set
-each one's directory in a list in `clonedir`.
+The default configuration file is installed to
+`/usr/share/pacpush/pacpush.conf`. Copy this file to your personal
+`~/.config/pacpush.conf` if you want to change it. Currently the only
+configuration value is `clonedir` which is the location of your AUR
+helpers download/build directory. This is the directory from which AUR
+packages are rsync'd from the local host to remote hosts. It only needs
+to be configured on the local host. `clonedir` can be set to a single
+directory, or a list of directories. Ensure that `clonedir` is set to,
+or at least contains, the directory your AUR helper is using. See the
+default setting and examples in the default configuration file. If you
+use multiple AUR helpers then set each one's directory in a list in
+`clonedir`.
 
 ### SSH KEY CONFIGURATION
 

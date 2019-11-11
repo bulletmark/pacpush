@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 '''
 Utility to push this Arch hosts system and AUR package caches to other
 host[s] to avoid those other hosts having to download the same new
@@ -9,6 +9,7 @@ Requires root ssh access to other hosts (it is easier with an auth key).
 
 import sys, os, platform, subprocess, argparse, tempfile, pickle
 import multiprocessing
+from collections import OrderedDict
 from pathlib import Path
 
 # Define paths of interest for pacman packages
@@ -25,7 +26,7 @@ MACH = platform.machine()
 PROG = Path(sys.argv[0]).stem
 CONFNAME = f'{PROG}.conf'
 USERCNF = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
-CONFDIRS = (USERCNF, '/etc')
+CONFDIRS = (USERCNF, f'/usr/share/{PROG}')
 
 # Process command line options
 opt = argparse.ArgumentParser(description=__doc__)
@@ -212,7 +213,8 @@ def synchost(host, clonedirs):
             for clonedir in clonedirs:
                 dpkg = clonedir.joinpath(name)
                 if dpkg.exists():
-                    log(0, 1, f'{HOST} has AUR {clonedir.name}/{name} for {host}')
+                    log(0, 1,
+                      f'{HOST} has AUR {clonedir.name}/{name} for {host}')
                     filelist.append(dpkg)
 
             if count == len(filelist):
@@ -252,14 +254,17 @@ def run_root():
     with open(args.env, 'rb') as fp:
         clonedirs = pickle.load(fp)
 
-    if len(args.hosts) == 1 or args.parallel_count <= 1:
+    # Remove any duplicate hosts from argument list
+    hosts = list(OrderedDict.fromkeys(args.hosts))
+
+    if len(hosts) == 1 or args.parallel_count <= 1:
         # May as well do in same process if only 1 host or doing in series
-        for h in args.hosts:
+        for h in hosts:
             synchost(h, clonedirs)
     else:
         # Farm out the jobs to a pool of processes
         with multiprocessing.Pool(args.parallel_count) as p:
-            p.starmap(synchost, ((h, clonedirs) for h in args.hosts))
+            p.starmap(synchost, ((h, clonedirs) for h in hosts))
 
 def main():
     'Main processing ..'

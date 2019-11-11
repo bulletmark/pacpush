@@ -2,20 +2,21 @@
 # Setup script to install this package.
 # M.Blakeney, Mar 2018.
 
-import re
+import stat
 from pathlib import Path
 from setuptools import setup
 
+name = 'pacpush'
+module = name.replace('-', '_')
 here = Path(__file__).resolve().parent
-name = re.sub(r'-.*', '', here.stem)
-readme = here.joinpath('README.md').read_text()
+executable = stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH
 
 setup(
     name=name,
     version='0',
     description='Utility to push an Arch host\'s package and AUR '
     'caches to other hosts',
-    long_description=readme,
+    long_description=here.joinpath('README.md').read_text(),
     url=f'https://github.com/bulletmark/{name}',
     author='Mark Blakeney',
     author_email='mark@irsaere.net',
@@ -24,11 +25,12 @@ setup(
         'Programming Language :: Python :: 3',
     ],
     keywords='pacman',
-    py_modules=[name],
+    py_modules=[module],
+    python_requires='>=3.6',
     install_requires=['requests', 'ruamel.yaml'],
     data_files=[
-        (f'share/doc/{name}', ['README.md']),
-        (f'/etc', [f'{name}.conf']),
+        ('share/{}'.format(name), ['README.md', '{}.conf'.format(name)]),
     ],
-    scripts=[name],
+    scripts=[f.name for f in here.iterdir() if f.name.startswith(name)
+        and f.is_file() and f.stat().st_mode & executable],
 )

@@ -12,30 +12,29 @@
 # General Public License at <http://www.gnu.org/licenses/> for more
 # details.
 
-DOC = README.md
-
 NAME = pacpush
+
+DOC = README.md
 DOCOUT = $(DOC:.md=.html)
 
 all:
-	@echo "Type sudo make install|uninstall, or make doc|check|clean"
+	@echo "Type sudo make install|uninstall"
+	@echo "or make doc|check|clean"
 
 install:
-	@python setup.py install --root=$(or $(DESTDIR),/) --optimize=1
+	pip3 install .
 
 uninstall:
-	@rm -vrf $(DESTDIR)/usr/bin/$(NAME)* $(DESTDIR)/etc/$(NAME).conf \
-	    $(DESTDIR)/usr/share/doc/$(NAME) \
-	    $(DESTDIR)/usr/lib/python*/site-packages/*$(NAME)* \
-	    $(DESTDIR)/usr/lib/python*/site-packages/*/*$(NAME)*
+	pip3 uninstall $(NAME)
 
 doc:	$(DOCOUT)
 
-check:
-	flake8 $(NAME).py $(NAME) setup.py
-
 $(DOCOUT): $(DOC)
 	markdown $< >$@
+
+check:
+	flake8 $(NAME).py $(NAME) setup.py
+	vermin -i -q $(NAME).py $(NAME) setup.py
 
 clean:
 	@rm -vrf $(DOCOUT) *.egg-info build/ dist/ __pycache__/
