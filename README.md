@@ -7,14 +7,14 @@ having to download them more than once via the web.
 
 My use case follows as a good example of what this utility is for.
 
-I update my main Arch PC and my Arch laptop every day using `pacaur -Syu`.
-Previously, I would update either both machines in parallel, or one
-before the other. So both machines would download the package lists from
-the web, then download and install the out of date system packages, then
-download, build, and install all out of date AUR packages. This takes
-quite some time, particularly on a slow internet connection, and it is
-inefficient to be downloading and building most packages twice for the
-same architecture machines.
+I update my main Arch PC and my Arch laptop every day using
+[`yay`](https://github.com/Jguer/yay). Previously, I would update either
+both machines in parallel, or one before the other. So both machines
+would download the package lists from the web, then download and install
+the out of date system packages, then download, build, and install all
+out of date AUR packages. This takes quite some time, particularly on a
+slow internet connection, and it is inefficient to be downloading and
+building most packages twice for the same architecture machines.
 
 Using `pacpush`, I now update my PC first then after that update has
 finished I run `pacpush lt` on my PC to update `lt` directly via my
@@ -24,11 +24,11 @@ packages), then pushes all the system and AUR packages that it has which
 `lt` needs. Note you can specify multiple hosts which will get queried
 and updated in parallel.
 
-After running `pacpush`, I run a `pacaur -Su` update on `lt` and it
-completes very quickly because `lt` only needs to download the system
-and AUR packages my PC did not have. I typically use very similar system
-and AUR packages on both machines so typically `lt` doesn't need to
-download or build any updated packages at all.
+After running `pacpush`, I run a [`yay`](https://github.com/Jguer/yay)
+update on `lt` and it completes very quickly because `lt` only needs to
+download the system and AUR packages my PC did not have. I typically use
+very similar system and AUR packages on both machines so typically `lt`
+doesn't need to download or build any updated AUR packages at all.
 
 You need to have root ssh access to the remote machines for `pacpush` to
 work. See the SSH KEY CONFIGURATION section below on how best to set
