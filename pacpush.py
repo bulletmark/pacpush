@@ -214,11 +214,11 @@ def synchost(host, clonedirs):
                 dpkg = clonedir.joinpath(name)
                 if dpkg.exists():
                     log(0, 1,
-                      f'can give AUR {clonedir.name}/{name}')
+                      f'AUR {clonedir.name}/{name}')
                     filelist.append(dpkg)
 
             if count == len(filelist):
-                log(0, 1, f'does not have AUR {name}')
+                log(0, 1, f'AUR {name} (not available)')
         else:
             # System package:
             name, oldver, junk, newver = line.split()
@@ -229,10 +229,10 @@ def synchost(host, clonedirs):
             dpkg = max(PACPKGS.glob(f'{pkg}-*'),
                     key=lambda p: p.stat().st_mtime, default=None)
             if dpkg:
-                log(0, 1, f'can give {pkg}')
+                log(0, 1, pkg)
                 filelist.append(dpkg)
             else:
-                log(0, 1, f'does not have {pkg}')
+                log(0, 1, f'{pkg} (not available)')
 
     if filelist:
         log(0, 0, 'syncing updated packages ..')
@@ -243,7 +243,7 @@ def synchost(host, clonedirs):
                 f'/usr/bin/rsync -arRO --info=name1 {dryrun}'
                 f'--files-from {fp.name} / {host}:/'.split())
     elif name:
-        log(0, 0, f'can not give any packages.')
+        log(0, 0, f'no packages available.')
     else:
         log(0, 0, f'already up to date.')
 
