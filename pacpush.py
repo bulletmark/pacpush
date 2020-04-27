@@ -214,11 +214,11 @@ def synchost(host, clonedirs):
                 dpkg = clonedir.joinpath(name)
                 if dpkg.exists():
                     log(0, 1,
-                      f'{HOST} has AUR {clonedir.name}/{name} for {host}')
+                      f'can give AUR {clonedir.name}/{name}')
                     filelist.append(dpkg)
 
             if count == len(filelist):
-                log(0, 1, f'{HOST} does not have AUR {name} for {host}')
+                log(0, 1, f'does not have AUR {name}')
         else:
             # System package:
             name, oldver, junk, newver = line.split()
@@ -229,10 +229,10 @@ def synchost(host, clonedirs):
             dpkg = max(PACPKGS.glob(f'{pkg}-*'),
                     key=lambda p: p.stat().st_mtime, default=None)
             if dpkg:
-                log(0, 1, f'{HOST} has {pkg} for {host}')
+                log(0, 1, f'can give {pkg}')
                 filelist.append(dpkg)
             else:
-                log(0, 1, f'{HOST} does not have {pkg} for {host}')
+                log(0, 1, f'does not have {pkg}')
 
     if filelist:
         log(0, 0, 'syncing updated packages ..')
@@ -243,9 +243,9 @@ def synchost(host, clonedirs):
                 f'/usr/bin/rsync -arRO --info=name1 {dryrun}'
                 f'--files-from {fp.name} / {host}:/'.split())
     elif name:
-        log(0, 0, f'{HOST} does not have any packages {host} requires.')
+        log(0, 0, f'can not give any packages.')
     else:
-        log(0, 0, f'{host} is already up to date.')
+        log(0, 0, f'already up to date.')
 
 def run_root():
     'Run as root to do updates'
