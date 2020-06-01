@@ -7,7 +7,13 @@ Requires root ssh access to other hosts (it is easier with an auth key).
 '''
 # Author: Mark Blakeney, Mar 2017.
 
-import sys, os, platform, subprocess, argparse, tempfile, pickle
+import sys
+import os
+import platform
+import subprocess
+import argparse
+import tempfile
+import pickle
 import multiprocessing
 from collections import OrderedDict
 from pathlib import Path
@@ -113,7 +119,7 @@ def report_updates():
 
 def run_user():
     'Run as user to read user config and save environment'
-    import ruamel.yaml as yaml
+    from ruamel.yaml import YAML
     # Search for configuration file. Use file given as command line
     # argument, else look for file in search dir order.
     if args.conffile:
@@ -129,8 +135,7 @@ def run_user():
             dirs = ' or '.join(CONFDIRS)
             return f'No file {CONFNAME} in {dirs}.'
 
-    with conffile.open() as fp:
-        conf = yaml.safe_load(fp)
+    conf = YAML(typ='safe').load(conffile)
 
     # Clonedir may either be a single dir, or a list of dirs
     clonedir = conf.get('clonedir', [])
@@ -237,15 +242,15 @@ def synchost(host, clonedirs):
     if filelist:
         log(0, 0, 'syncing updated packages ..')
         with tempfile.NamedTemporaryFile() as fp:
-            fp.writelines(bytes(l) + b'\n' for l in filelist)
+            fp.writelines(bytes(line) + b'\n' for line in filelist)
             fp.flush()
             subprocess.run(
                 f'/usr/bin/rsync -arRO --info=name1 {dryrun}'
                 f'--files-from {fp.name} / {host}:/'.split())
     elif name:
-        log(0, 0, f'no packages available.')
+        log(0, 0, 'no packages available.')
     else:
-        log(0, 0, f'already up to date.')
+        log(0, 0, 'already up to date.')
 
 def run_root():
     'Run as root to do updates'
