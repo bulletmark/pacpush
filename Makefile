@@ -12,7 +12,7 @@
 # General Public License at <http://www.gnu.org/licenses/> for more
 # details.
 
-NAME = pacpush
+NAME = $(shell basename $(CURDIR))
 
 DOC = README.md
 DOCOUT = $(DOC:.md=.html)
@@ -33,8 +33,9 @@ $(DOCOUT): $(DOC)
 	markdown $< >$@
 
 check:
-	flake8 $(NAME).py $(NAME) setup.py
-	vermin --no-tips -i -q $(NAME).py $(NAME) setup.py
+	flake8 $(NAME).py setup.py
+	vermin --no-tips -i -q $(NAME).py setup.py
+	python3 setup.py check
 
 clean:
 	@rm -vrf $(DOCOUT) *.egg-info build/ dist/ __pycache__/
