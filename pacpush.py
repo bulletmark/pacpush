@@ -94,11 +94,9 @@ def report_updates():
 
     try:
         r = requests.get(AURWEB, params=params)
-    except Exception as e:
+        r.raise_for_status()
+    except requests.exceptions.RequestException as e:
         return f'AURWEB error: {str(e)}'
-
-    if r.status_code != requests.codes.ok:
-        return f'AURWEB returned error: {r.text}'
 
     # Now print out version updates for AUR packages
     # Follow cower format for prepending AUR lines with ':: '.
