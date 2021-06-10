@@ -226,14 +226,11 @@ def synchost(host, clonedirs):
             # System package:
             name, oldver, junk, newver = line.split()
 
-            # Can't be sure of the file (package) extension so get the
-            # latest file by time.
             pkg = f'{name}-{newver}'
-            dpkg = max(PACPKGS.glob(f'{pkg}-*'),
-                    key=lambda p: p.stat().st_mtime, default=None)
-            if dpkg:
+            pkgfiles = PACPKGS.glob(f'{pkg}-*')
+            if pkgfiles:
                 log(0, 1, pkg)
-                filelist.append(dpkg)
+                filelist.extend(pkgfiles)
             else:
                 log(0, 1, f'{pkg} (not available)')
 
