@@ -15,7 +15,6 @@ import argparse
 import tempfile
 import pickle
 import multiprocessing
-from collections import OrderedDict
 from pathlib import Path
 
 # Define paths of interest for pacman packages
@@ -58,7 +57,7 @@ dryrun = '-n ' if args.dryrun else ''
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
-    res = subprocess.run(f'pacman {opt}'.split(), universal_newlines=True,
+    res = subprocess.run(f'pacman {opt}'.split(), text=True,
             stdout=subprocess.PIPE)
 
     # Ignore pacman return code since it returns non 0 codes even for
@@ -172,7 +171,7 @@ def synchost(host, clonedirs):
 
     if not args.no_machcheck:
         res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
-                universal_newlines=True, stdout=subprocess.PIPE)
+                text=True, stdout=subprocess.PIPE)
 
         if res.returncode != 0:
             log(1, 0, 'failed to ssh.\n'
@@ -202,7 +201,7 @@ def synchost(host, clonedirs):
     aopt = ' --aur-only' if args.aur_only else ''
     sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
     res = subprocess.run(f'/usr/bin/ssh {host} pacpush{aopt}{sopt} -u'.split(),
-            universal_newlines=True, stdout=subprocess.PIPE)
+            text=True, stdout=subprocess.PIPE)
 
     filelist = []
     name = None
@@ -255,7 +254,7 @@ def run_root():
         clonedirs = pickle.load(fp)
 
     # Remove any duplicate hosts from argument list
-    hosts = list(OrderedDict.fromkeys(args.hosts))
+    hosts = list(dict.fromkeys(args.hosts))
 
     if len(hosts) == 1 or args.parallel_count <= 1:
         # May as well do in same process if only 1 host or doing in series
