@@ -115,7 +115,8 @@ using the `-p/--parallel-count` option.
 
 ````
 usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s] [-a]
-               [hosts [hosts ...]]
+               [-C]
+               [hosts ...]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
 to avoid those other hosts having to download the same new package lists and
@@ -138,6 +139,7 @@ optional arguments:
                         pending, including AUR packages
   -s, --sys-only        only sync/report system packages, not AUR
   -a, --aur-only        only sync/report AUR packages, not system
+  -C, --no-color        do not color output lines
 ````
 
 ### LICENSE
