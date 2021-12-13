@@ -76,7 +76,7 @@ def pacman(opt):
 
 def report_updates():
     'Report all installed native and AUR packages with updates pending'
-    from distutils.version import LooseVersion as Version
+    from packaging import version
     import requests
 
     # Print out version updates for standard packages
@@ -96,7 +96,7 @@ def report_updates():
     pkgs = {}
     for line in pacman('-Qm'):
         name, vers = line.split()
-        pkgs[name] = Version(vers)
+        pkgs[name] = version.parse(vers)
 
     # Get info for this list of packages from AURWEB
     params = {'v': 5, 'type': 'info', 'arg[]': list(pkgs)}
@@ -111,7 +111,7 @@ def report_updates():
     # Follow cower format for prepending AUR lines with ':: '.
     for pkg in r.json().get('results', []):
         name = str(pkg.get('Name'))
-        newver = Version(pkg.get('Version', ''))
+        newver = version.parse(pkg.get('Version', ''))
         oldver = pkgs.get(name)
         if oldver:
             # Catch and work around Version bug, see
