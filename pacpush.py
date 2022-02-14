@@ -172,45 +172,44 @@ def synchost(num, host, clonedirs):
     'Sync to given host'
     color = COLORS[num % len(COLORS)]
 
-    def log(child, msg):
+    def log(msg):
         'Log messages for update to host'
-        lead = '* ' if child else ''
-        txt = f'{lead}{HOST} -> {host}: {msg}'
+        txt = f'{host}: {msg}'
         with lock:
             if console:
                 console.print(txt, style=color, highlight=False)
             else:
                 print(txt)
 
+    def rsync(src):
+        cmd = f'/usr/bin/rsync -arRO --info=name1 {dryrun} {src} {host}:/'
+        res = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
+                bufsize=1, text=True)
+
+        for line in res.stdout:
+            log(f'synced {line.strip()}')
+
     if not args.no_machcheck:
         res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
                 text=True, stdout=subprocess.PIPE)
 
         if res.returncode != 0:
-            log(0, 'failed to ssh.\n'
-                    f'Have you set up root ssh access to {host}?')
+            log(f'ssh failed. Have you set up root ssh access to {host}?')
             return
 
         hostmach = res.stdout.strip()
         if hostmach != MACH:
-            log(0, f'{HOST} type={MACH} does not match '
-                    f'{host} type={hostmach}.')
+            log(f'{HOST} type={MACH} does not match {host} type={hostmach}.')
             return
 
     # Push the current package lists to the host then work out what
     # package updates are required by this host. Then push all new
     # packages it requires that we already hold, including AUR files.
     if not args.aur_only:
-        log(0, f'syncing {MACH} package lists ..')
-        res = subprocess.run(
-                f'/usr/bin/rsync -aRO --info=name1 {dryrun}'
-                f'{PACLIST} {host}:/'.split())
+        log(f'syncing {MACH} package lists ..')
+        rsync(PACLIST)
 
-        if res.returncode != 0:
-            log(0, 'failed to sync package lists.')
-            return
-
-    log(0, f'getting list of required package updates from {host} ..')
+    log('getting list of needed package updates ..')
     aopt = ' --aur-only' if args.aur_only else ''
     sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
     res = subprocess.run(f'/usr/bin/ssh {host} pacpush{aopt}{sopt} -u'.split(),
@@ -228,11 +227,11 @@ def synchost(num, host, clonedirs):
             for clonedir in clonedirs:
                 dpkg = clonedir.joinpath(name)
                 if dpkg.exists():
-                    log(1, f'AUR {clonedir.name}/{name}')
+                    log(f'AUR {clonedir.name}/{name}')
                     filelist.append(dpkg)
 
             if count == len(filelist):
-                log(1, f'AUR {name} (not available)')
+                log(f'AUR {name} (not available)')
         else:
             # System package:
             name, oldver, junk, newver = line.split()
@@ -240,23 +239,21 @@ def synchost(num, host, clonedirs):
             pkg = f'{name}-{newver}'
             pkgfiles = PACPKGS.glob(f'{pkg}-*')
             if pkgfiles:
-                log(1, pkg)
+                log(f'need {pkg}')
                 filelist.extend(pkgfiles)
             else:
-                log(1, f'{pkg} (not available)')
+                log(f'{pkg} (not available)')
 
     if filelist:
-        log(0, 'syncing updated packages ..')
+        log('syncing updated packages ..')
         with tempfile.NamedTemporaryFile() as fp:
             fp.writelines(bytes(line) + b'\n' for line in filelist)
             fp.flush()
-            subprocess.run(
-                f'/usr/bin/rsync -arRO --info=name1 {dryrun}'
-                f'--files-from {fp.name} / {host}:/'.split())
+            rsync(f'--files-from {fp.name} /')
     elif name:
-        log(0, 'no packages available.')
+        log('no packages available.')
     else:
-        log(0, 'already up to date.')
+        log('already up to date.')
 
 def run_root():
     'Run as root to do updates'

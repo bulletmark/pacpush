@@ -22,7 +22,8 @@ local LAN. Pacpush pushes the updated package lists, then queries `lt`
 to work out which packages `lt` has out of date (including AUR
 packages), then pushes all the system and AUR packages that it has which
 `lt` needs. Note you can specify multiple hosts which will get queried
-and updated in parallel.
+and updated in parallel. Update messages are output in a unique color for
+each host.
 
 After running `pacpush`, I run a [`yay`](https://github.com/Jguer/yay)
 update on `lt` and it completes very quickly because `lt` only needs to
@@ -111,7 +112,8 @@ user (i.e. the `clonedir` location[s] from the configuration file).
 
 If you specify multiple hosts then the program will update them in
 parallel. You can limit, or increase, the number of parallel updates
-using the `-p/--parallel-count` option.
+using the `-p/--parallel-count` option. Update messages are output in a
+unique color for each host.
 
 ````
 usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s] [-a]
@@ -126,7 +128,7 @@ access to other hosts (it is easier with an auth key).
 positional arguments:
   hosts                 hosts to update
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -n, --dryrun          dry run only
   -m, --no-machcheck    do not check machine type compatibility
