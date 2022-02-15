@@ -227,7 +227,7 @@ def synchost(num, host, clonedirs):
             for clonedir in clonedirs:
                 dpkg = clonedir.joinpath(name)
                 if dpkg.exists():
-                    log(f'AUR {clonedir.name}/{name}')
+                    log(f'need AUR {clonedir.name}/{name}')
                     filelist.append(dpkg)
 
             if count == len(filelist):
