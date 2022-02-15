@@ -114,8 +114,6 @@ def report_updates():
         newver = version.parse(pkg.get('Version', ''))
         oldver = pkgs.get(name)
         if oldver:
-            # Catch and work around Version bug, see
-            # https://bugs.python.org/issue14894
             try:
                 update = oldver < newver
             except TypeError:
@@ -271,7 +269,7 @@ def run_root():
             synchost(n, h, clonedirs)
     else:
         # Farm out the jobs to a pool of processes
-        with multiprocessing.Pool(args.parallel_count) as p:
+        with multiprocessing.Pool(min(len(hosts), args.parallel_count)) as p:
             p.starmap(synchost, ((n, h, clonedirs) for n, h in
                 enumerate(hosts)))
 
