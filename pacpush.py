@@ -248,6 +248,7 @@ def synchost(num, host, clonedirs):
             fp.writelines(bytes(line) + b'\n' for line in filelist)
             fp.flush()
             rsync(f'--files-from {fp.name} /')
+        log('finished syncing packages.')
     elif name:
         log('no packages available.')
     else:
