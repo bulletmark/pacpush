@@ -14,12 +14,9 @@
 
 NAME = $(shell basename $(CURDIR))
 
-DOC = README.md
-DOCOUT = $(DOC:.md=.html)
-
 all:
 	@echo "Type sudo make install|uninstall"
-	@echo "or make doc|check|clean"
+	@echo "or make check|clean"
 
 install:
 	pip3 install .
@@ -27,15 +24,10 @@ install:
 uninstall:
 	pip3 uninstall $(NAME)
 
-doc:	$(DOCOUT)
-
-$(DOCOUT): $(DOC)
-	markdown $< >$@
-
 check:
 	flake8 $(NAME).py setup.py
-	vermin --no-tips -i -vv $(NAME).py setup.py
+	vermin --no-tips -i $(NAME).py setup.py
 	python3 setup.py check
 
 clean:
-	@rm -vrf $(DOCOUT) *.egg-info build/ dist/ __pycache__/
+	@rm -vrf *.egg-info build/ dist/ __pycache__/

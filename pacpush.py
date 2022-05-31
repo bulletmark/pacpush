@@ -20,6 +20,7 @@ from pathlib import Path
 # Define paths of interest for pacman packages
 PACLIST = Path('/var/lib/pacman/sync')
 PACPKGS = Path('/var/cache/pacman/pkg')
+MIRRORS = Path('/etc/pacman.d/mirrorlist')
 
 # Colors to output host messages
 COLORS = ('green', 'yellow', 'magenta', 'cyan', 'red', 'blue')
@@ -55,6 +56,8 @@ opt.add_argument('-a', '--aur-only', action='store_true',
         help='only sync/report AUR packages, not system')
 opt.add_argument('-C', '--no-color', action='store_true',
         help='do not color output lines')
+opt.add_argument('-M', '--mirrorlist', action='store_true',
+        help='also sync mirrorlist file')
 opt.add_argument('hosts', nargs='*', help='hosts to update')
 opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()
@@ -204,13 +207,20 @@ def synchost(num, host, clonedirs):
     # package updates are required by this host. Then push all new
     # packages it requires that we already hold, including AUR files.
     if not args.aur_only:
-        log(f'syncing {MACH} package lists ..')
-        rsync(PACLIST)
+        arglist = str(PACLIST)
+        if args.mirrorlist:
+            arglist += f' {MIRRORS}'
+            mirtxt = ' and mirror'
+        else:
+            mirtxt = ''
+
+        log(f'syncing {MACH} package{mirtxt} lists ..')
+        rsync(arglist)
 
     log('getting list of needed package updates ..')
     aopt = ' --aur-only' if args.aur_only else ''
     sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
-    res = subprocess.run(f'/usr/bin/ssh {host} pacpush{aopt}{sopt} -u'.split(),
+    res = subprocess.run(f'/usr/bin/ssh {host} {PROG}{aopt}{sopt} -u'.split(),
             text=True, stdout=subprocess.PIPE)
 
     filelist = []
