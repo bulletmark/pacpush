@@ -117,7 +117,7 @@ unique color for each host.
 
 ````
 usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s] [-a]
-               [-C]
+               [-C] [-M]
                [hosts ...]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
@@ -142,6 +142,7 @@ options:
   -s, --sys-only        only sync/report system packages, not AUR
   -a, --aur-only        only sync/report AUR packages, not system
   -C, --no-color        do not color output lines
+  -M, --mirrorlist      also sync mirrorlist file
 ````
 
 ### LICENSE
