@@ -1,4 +1,5 @@
 ## PACPUSH
+[![AUR](https://img.shields.io/aur/version/pacpush)](https://aur.archlinux.org/packages/pacpush/)
 
 [pacpush](http://github.com/bulletmark/pacpush) is a small and simple
 command line utility which you can use to manually push `pacman` and
