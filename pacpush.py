@@ -165,6 +165,12 @@ def run_user():
     sock = os.getenv('SSH_AUTH_SOCK')
     cmd = ['/usr/bin/sudo', f'SSH_AUTH_SOCK={sock}'] + sys.argv + \
             [f'--env={fp.name}']
+
+    # Add mirrorlist option if specified in conf file (and not already
+    # specified in command line)
+    if not args.mirrorlist and conf.get('mirrorlist', False):
+        cmd += ' --mirrorlist'
+
     return subprocess.run(cmd).returncode
 
 lock = multiprocessing.Lock()

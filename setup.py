@@ -27,9 +27,9 @@ setup(
     python_requires='>=3.7',
     install_requires=['requests', 'ruamel.yaml', 'rich'],
     data_files=[
-        ('share/{}'.format(name), ['README.md', '{}.conf'.format(name)]),
+        (f'share/{name}', ['README.md', f'{name}.conf']),
     ],
     entry_points={
-        'console_scripts': ['{}={}:main'.format(name, module)],
+        'console_scripts': [f'{name}={module}:main'],
     },
 )
