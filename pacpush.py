@@ -64,9 +64,14 @@ args = opt.parse_args()
 dryrun = '-n ' if args.dryrun else ''
 
 console = None
+
 if not args.no_color:
-    from rich.console import Console
-    console = Console()
+    try:
+        from rich.console import Console
+    except Exception:
+        args.no_color = True
+    else:
+        console = Console()
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
