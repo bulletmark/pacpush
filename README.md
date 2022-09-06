@@ -97,7 +97,7 @@ already set up personal ssh access to that host):
 
     # Possibly remove any keys you don't want root to allow if you have
     # more than one:
-    sudo vim /root/.ssh/authorized_keys
+    sudoedit /root/.ssh/authorized_keys
 
 Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
