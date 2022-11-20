@@ -22,8 +22,18 @@ PACLIST = Path('/var/lib/pacman/sync')
 PACPKGS = Path('/var/cache/pacman/pkg')
 MIRRORS = Path('/etc/pacman.d/mirrorlist')
 
+# Define ANSI escape sequences for colors ..
+COLOR_red = '\033[31m'
+COLOR_green = '\033[32m'
+COLOR_yellow = '\033[33m'
+COLOR_blue = '\033[34m'
+COLOR_magenta = '\033[35m'
+COLOR_cyan = '\033[36m'
+COLOR_white = '\033[37m'
+
 # Colors to output host messages
-COLORS = ('green', 'yellow', 'magenta', 'cyan', 'red', 'blue')
+COLORS = (COLOR_green, COLOR_yellow, COLOR_magenta, COLOR_cyan,
+          COLOR_red, COLOR_blue)
 
 # Where we fetch AUR versions from
 AURWEB = 'https://aur.archlinux.org/rpc'
@@ -64,14 +74,6 @@ args = opt.parse_args()
 dryrun = '-n ' if args.dryrun else ''
 
 console = None
-
-if not args.no_color:
-    try:
-        from rich.console import Console
-    except Exception:
-        args.no_color = True
-    else:
-        console = Console()
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
@@ -158,7 +160,7 @@ def run_user():
         clonedirs = [Path(c).expanduser() for c in clonedir]
 
     # Can immediately filter out dirs which don't exist
-    clonedirs = [c for c in clonedirs if c.exists()]
+    clonedirs = [c for c in clonedirs if c.is_dir()]
 
     # Save ordinary user environment to reference for running as root
     fp = tempfile.NamedTemporaryFile()
@@ -188,10 +190,10 @@ def synchost(num, host, clonedirs):
         'Log messages for update to host'
         txt = f'{host}: {msg}'
         with lock:
-            if console:
-                console.print(txt, style=color, highlight=False)
-            else:
+            if args.no_color:
                 print(txt)
+            else:
+                print(color + txt)
 
     def rsync(src):
         cmd = f'/usr/bin/rsync -arRO --info=name1 {dryrun} {src} {host}:/'
