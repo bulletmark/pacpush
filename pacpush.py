@@ -30,10 +30,11 @@ COLOR_blue = '\033[34m'
 COLOR_magenta = '\033[35m'
 COLOR_cyan = '\033[36m'
 COLOR_white = '\033[37m'
+COLOR_reset = '\033[39m'
 
 # Colors to output host messages
 COLORS = (COLOR_green, COLOR_yellow, COLOR_magenta, COLOR_cyan,
-          COLOR_red, COLOR_blue)
+          COLOR_red, COLOR_blue, COLOR_reset)
 
 # Where we fetch AUR versions from
 AURWEB = 'https://aur.archlinux.org/rpc'
@@ -73,7 +74,9 @@ opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()
 dryrun = '-n ' if args.dryrun else ''
 
-console = None
+# Only use color for terminal output
+if not sys.stdout.isatty():
+    args.no_color = True
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
