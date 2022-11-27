@@ -196,7 +196,7 @@ def synchost(num, host, clonedirs):
             if args.no_color:
                 print(txt)
             else:
-                print(color + txt)
+                print(color + txt + COLOR_reset)
 
     def rsync(src):
         cmd = f'/usr/bin/rsync -arRO --info=name1 {dryrun} {src} {host}:/'
