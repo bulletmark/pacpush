@@ -50,6 +50,7 @@ CONFDIRS = (USERCNF, f'/usr/share/{PROG}')
 
 # Process command line options
 opt = argparse.ArgumentParser(description=__doc__)
+opt.add_argument('-i', type=str, dest='identity_file', default='', help='identity_file')
 opt.add_argument('-n', '--dryrun', action='store_true', help='dry run only')
 opt.add_argument('-m', '--no-machcheck', action='store_true',
         help='do not check machine type compatibility')
@@ -188,6 +189,7 @@ lock = multiprocessing.Lock()
 def synchost(num, host, clonedirs):
     'Sync to given host'
     color = COLORS[num % len(COLORS)]
+    ssh_command = f'/usr/bin/ssh -i {args.identity_file}' if args.identity_file else f'/usr/bin/ssh'
 
     def log(msg):
         'Log messages for update to host'
@@ -199,15 +201,18 @@ def synchost(num, host, clonedirs):
                 print(color + txt + COLOR_reset)
 
     def rsync(src):
-        cmd = f'/usr/bin/rsync -arRO --info=name1 {dryrun} {src} {host}:/'
-        res = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
+        cmd = f'/usr/bin/rsync  -arRO --info=name1 {dryrun} {src} {host}:/' if args.identity_file else f'/usr/bin/rsync -arRO --info=name1 {dryrun} {src} {host}:/'
+        cmd = cmd.split()
+        cmd.insert(3,'-e')
+        cmd.insert(4,f'ssh -i {args.identity_file}')
+        res = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                 bufsize=1, text=True)
 
         for line in res.stdout:
             log(f'synced {line.strip()}')
 
     if not args.no_machcheck:
-        res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
+        res = subprocess.run(f'{ssh_command} {host} uname -m'.split(),
                 text=True, stdout=subprocess.PIPE)
 
         if res.returncode != 0:
@@ -236,7 +241,7 @@ def synchost(num, host, clonedirs):
     log('getting list of needed package updates ..')
     aopt = ' --aur-only' if args.aur_only else ''
     sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
-    res = subprocess.run(f'/usr/bin/ssh {host} {PROG}{aopt}{sopt} -u'.split(),
+    res = subprocess.run(f'{ssh_command} {host} {PROG}{aopt}{sopt} -u'.split(),
             text=True, stdout=subprocess.PIPE)
 
     filelist = []
