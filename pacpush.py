@@ -46,8 +46,8 @@ MACH = platform.machine()
 PROG = Path(sys.argv[0]).resolve()
 PROGNAME = PROG.stem
 CONFNAME = f'{PROGNAME}.conf'
-USERCNF = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
-CONFDIRS = (USERCNF, f'/usr/share/{PROGNAME}')
+USERCNF = Path(os.getenv('XDG_CONFIG_HOME') or os.path.expanduser('~/.config'))
+CONFDIRS = (USERCNF / PROGNAME, USERCNF, Path(f'/usr/share/{PROGNAME}'))
 
 # Process command line options
 opt = argparse.ArgumentParser(description=__doc__)
@@ -140,11 +140,11 @@ def run_user():
             return f'Conf file "{conffile}" does not exist.'
     else:
         for confdir in CONFDIRS:
-            conffile = Path(confdir, CONFNAME)
+            conffile = confdir / CONFNAME
             if conffile.exists():
                 break
         else:
-            dirs = ' or '.join(CONFDIRS)
+            dirs = ' or '.join(str(d) for d in CONFDIRS)
             return f'No file {CONFNAME} in {dirs}.'
 
     conf = YAML(typ='safe').load(conffile)
