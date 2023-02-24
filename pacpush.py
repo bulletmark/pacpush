@@ -89,7 +89,6 @@ def pacman(opt):
 
 def report_updates():
     'Report all installed native and AUR packages with updates pending'
-    from packaging import version
     import requests
 
     # Print out version updates for standard packages
@@ -109,7 +108,7 @@ def report_updates():
     pkgs = {}
     for line in pacman('-Qm'):
         name, vers = line.split()
-        pkgs[name] = version.parse(vers)
+        pkgs[name] = vers
 
     # Get info for this list of packages from AURWEB
     params = {'v': 5, 'type': 'info', 'arg[]': list(pkgs)}
@@ -124,16 +123,9 @@ def report_updates():
     # Follow cower format for prepending AUR lines with ':: '.
     for pkg in r.json().get('results', []):
         name = str(pkg.get('Name'))
-        newver = version.parse(pkg.get('Version', ''))
-        oldver = pkgs.get(name)
-        if oldver:
-            try:
-                update = oldver < newver
-            except TypeError:
-                update = str(oldver) < str(newver)
-
-            if update:
-                print(f':: {name} {oldver} -> {newver}')
+        newver = pkg.get('Version', '?')
+        oldver = pkgs.get(name, '?')
+        print(f':: {name} {oldver} -> {newver}')
 
 def run_user():
     'Run as user to read user config and save environment'
