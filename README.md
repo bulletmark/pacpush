@@ -47,7 +47,7 @@ CONFIGURATION section below for details.
 The latest version and documentation is available at
 https://github.com/bulletmark/pacpush.
 
-### COMPARISION TO PACSERVE
+## COMPARISION TO PACSERVE
 
 To solve this problem, I originally started using
 [pacserve](https://aur.archlinux.org/packages/pacserve/) which is what
@@ -59,13 +59,13 @@ huge source and other files and can require long build times. Since
 second machine benefits by typically not having to download or rebuild
 any updated AUR packages at all.
 
-### INSTALLATION
+## INSTALLATION
 
 Just install [_pacpush from the
 AUR_](https://aur.archlinux.org/packages/pacpush/) to the local and
 remote hosts.
 
-### CONFIGURATION
+## CONFIGURATION
 
 The default configuration file is installed to
 `/usr/share/pacpush/pacpush.conf`. Copy this file to your personal
@@ -80,7 +80,7 @@ default setting and examples in the default configuration file. If you
 use multiple AUR helpers then set each one's directory in a list in
 `clonedir`.
 
-### SSH KEY CONFIGURATION
+## SSH KEY CONFIGURATION
 
 You need to set up root ssh access from your host machine to the remote
 machine[s] for `pacpush` to work. For security and convenience, it is
@@ -103,23 +103,27 @@ Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
 session authenticates against your personal ssh key.
 
-### USAGE
+## HOW TO USE
 
 You run it directly on the command line as your normal user (not as root
 and not using sudo explicitly) specifying as arguments the host, or
 hosts, you want to update. The utility will re-invoke itself using sudo
-and will push the cached AUR build directory of the invoking
-user (i.e. the `clonedir` location[s] from the configuration file).
+and will push the cached AUR build directory of the invoking user (i.e.
+the `clonedir` location[s] from the configuration file).
 
 If you specify multiple hosts then the program will update them in
 parallel. You can limit, or increase, the number of parallel updates
 using the `-p/--parallel-count` option. Update messages are output in a
 unique color for each host.
 
-````
-usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s] [-a]
-               [-C] [-M]
-               [hosts ...]
+## USAGE
+
+Type `pacpush -h` to view the usage summary:
+
+```
+usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s]
+                  [-a] [-C] [-M] [-F SSH_CONFIG_FILE]
+                  [hosts ...]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
 to avoid those other hosts having to download the same new package lists and
@@ -144,9 +148,11 @@ options:
   -a, --aur-only        only sync/report AUR packages, not system
   -C, --no-color        do not color output lines
   -M, --mirrorlist      also sync mirrorlist file
-````
+  -F SSH_CONFIG_FILE, --ssh-config-file SSH_CONFIG_FILE
+                        ssh configuration file
+```
 
-### LICENSE
+## LICENSE
 
 Copyright (C) 2017 Mark Blakeney. This program is distributed under the
 terms of the GNU General Public License.

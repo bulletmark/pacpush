@@ -11,6 +11,9 @@ install:
 uninstall:
 	pip3 uninstall --root-user-action=ignore $(NAME)
 
+doc:
+	update-readme-usage
+
 check:
 	flake8 $(PYNAME).py setup.py
 	vermin --no-tips -i $(PYNAME).py setup.py

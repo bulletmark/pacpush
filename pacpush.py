@@ -43,10 +43,11 @@ HOST = platform.node()
 MACH = platform.machine()
 
 # Conf file, search first for user file then system file
-PROG = Path(sys.argv[0]).stem
-CONFNAME = f'{PROG}.conf'
+PROG = Path(sys.argv[0]).resolve()
+PROGNAME = PROG.stem
+CONFNAME = f'{PROGNAME}.conf'
 USERCNF = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
-CONFDIRS = (USERCNF, f'/usr/share/{PROG}')
+CONFDIRS = (USERCNF, f'/usr/share/{PROGNAME}')
 
 # Process command line options
 opt = argparse.ArgumentParser(description=__doc__)
@@ -69,10 +70,11 @@ opt.add_argument('-C', '--no-color', action='store_true',
         help='do not color output lines')
 opt.add_argument('-M', '--mirrorlist', action='store_true',
         help='also sync mirrorlist file')
+opt.add_argument('-F', '--ssh-config-file',
+        help='ssh configuration file')
 opt.add_argument('hosts', nargs='*', help='hosts to update')
 opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()
-dryrun = '-n ' if args.dryrun else ''
 
 # Only use color for terminal output
 if not sys.stdout.isatty():
@@ -165,21 +167,43 @@ def run_user():
     # Pass ssh auth so that root uses sudo user's ssh cached key and
     # also pass user environment
     sock = os.getenv('SSH_AUTH_SOCK')
-    cmd = ['/usr/bin/sudo', f'SSH_AUTH_SOCK={sock}'] + sys.argv + \
+    cmd = ['sudo', f'SSH_AUTH_SOCK={sock}'] + sys.argv + \
             [f'--env={fp.name}']
 
     # Add mirrorlist option if specified in conf file (and not already
     # specified in command line)
-    if not args.mirrorlist and conf.get('mirrorlist', False):
-        cmd += ' --mirrorlist'
+    if not args.mirrorlist and conf.get('mirrorlist'):
+        cmd.append('--mirrorlist')
 
-    return subprocess.run(cmd).returncode
+    # Add ssh config option. Relative path in conf file is considered
+    # relative to path of conf file. Also may have to .expanduser() on
+    # it so ultimately we re-specify this full path on the new command
+    # line.
+    if args.ssh_config_file:
+        ssh_config_file = Path(args.ssh_config_file).expanduser().resolve()
+    else:
+        ssh_config_file = conf.get('ssh_config_file')
+        if ssh_config_file:
+            ssh_config_file = conffile.resolve().parent / \
+                    Path(ssh_config_file).expanduser()
+
+    if ssh_config_file:
+        cmd.append(f'--ssh-config-file="{ssh_config_file}"')
+
+    return subprocess.run(' '.join(cmd), shell=True).returncode
 
 lock = multiprocessing.Lock()
 
 def synchost(num, host, clonedirs):
     'Sync to given host'
     color = COLORS[num % len(COLORS)]
+
+    ssh_args = ''
+    rsync_args = ' -n' if args.dryrun else ''
+
+    if args.ssh_config_file:
+        ssh_args += f' -F {args.ssh_config_file}'
+        rsync_args += f' -e "ssh -F {args.ssh_config_file}"'
 
     def log(msg):
         'Log messages for update to host'
@@ -191,16 +215,16 @@ def synchost(num, host, clonedirs):
                 print(color + txt + COLOR_reset)
 
     def rsync(src):
-        cmd = f'/usr/bin/rsync -arRO --info=name1 {dryrun} {src} {host}:/'
-        res = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
-                bufsize=1, text=True)
+        cmd = f'rsync -arRO --info=name1 {rsync_args} {src} {host}:/'
+        res = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1,
+                               text=True, shell=True)
 
         for line in res.stdout:
             log(f'synced {line.strip()}')
 
     if not args.no_machcheck:
-        res = subprocess.run(f'/usr/bin/ssh {host} uname -m'.split(),
-                text=True, stdout=subprocess.PIPE)
+        res = subprocess.run(f'ssh{ssh_args} {host} uname -m',
+                             text=True, shell=True, stdout=subprocess.PIPE)
 
         if res.returncode != 0:
             log(f'ssh failed. Have you set up root ssh access to {host}?')
@@ -228,8 +252,9 @@ def synchost(num, host, clonedirs):
     log('getting list of needed package updates ..')
     aopt = ' --aur-only' if args.aur_only else ''
     sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
-    res = subprocess.run(f'/usr/bin/ssh {host} {PROG}{aopt}{sopt} -u'.split(),
-            text=True, stdout=subprocess.PIPE)
+
+    res = subprocess.run(f'ssh{ssh_args} {host} {PROG}{aopt}{sopt} -u',
+                         text=True, shell=True, stdout=subprocess.PIPE)
 
     filelist = []
     name = None
