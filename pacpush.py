@@ -126,8 +126,9 @@ def report_updates():
     for pkg in r.json().get('results', []):
         name = str(pkg.get('Name'))
         newver = pkg.get('Version', '?')
-        oldver = pkgs.get(name, '?')
-        print(f':: {name} {oldver} -> {newver}')
+        oldver = pkgs.get(name)
+        if oldver and oldver != newver:
+            print(f':: {name} {oldver} -> {newver}')
 
 def run_user():
     'Run as user to read user config and save environment'
