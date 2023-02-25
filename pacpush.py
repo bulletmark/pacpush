@@ -71,7 +71,7 @@ opt.add_argument('-C', '--no-color', action='store_true',
 opt.add_argument('-M', '--mirrorlist', action='store_true',
         help='also sync mirrorlist file')
 opt.add_argument('-F', '--ssh-config-file',
-        help='ssh configuration file')
+        help=f'{PROGNAME} specific ssh configuration file')
 opt.add_argument('hosts', nargs='*', help='hosts to update')
 opt.add_argument('--env', help=argparse.SUPPRESS)
 args = opt.parse_args()

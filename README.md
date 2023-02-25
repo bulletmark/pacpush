@@ -22,9 +22,7 @@ finished I run `pacpush lt` on my PC to update `lt` directly via my
 local LAN. Pacpush pushes the updated package lists, then queries `lt`
 to work out which packages `lt` has out of date (including AUR
 packages), then pushes all the system and AUR packages that it has which
-`lt` needs. Note you can specify multiple hosts which will get queried
-and updated in parallel. Update messages are output in a unique color for
-each host.
+`lt` needs.
 
 After running `pacpush`, I run a [`yay`](https://github.com/Jguer/yay)
 update on `lt` and it completes very quickly because `lt` only needs to
@@ -32,17 +30,22 @@ download the system and AUR packages my PC did not have. I typically use
 very similar system and AUR packages on both machines so typically `lt`
 doesn't need to download or build any updated AUR packages at all.
 
-You need to have root ssh access to the remote machines for `pacpush` to
-work. See the SSH KEY CONFIGURATION section below on how best to set
-this up.
-
 Obviously this only works for machines of the same architecture, i.e.
 compatible package files, so `pacpush` checks for this before pushing any
 files.
 
+You need to have root ssh access to the remote machines for `pacpush` to
+work. See the [SSH AND KEY CONFIGURATION](#ssh-and-key-configuration)
+section below on how best to set this up.
+
+If you specify multiple hosts then the program will update them in
+parallel. You can limit, or increase, the number of parallel updates
+using the `-p/--parallel-count` option. Update messages are output in a
+unique color for each host.
+
 Note that `pacpush` should work with any AUR helper so long as you set
 `clonedir` appropriately in your configuration file, see the
-CONFIGURATION section below for details.
+[CONFIGURATION FILE](#configuration-file) section below for details.
 
 The latest version and documentation is available at
 https://github.com/bulletmark/pacpush.
@@ -65,28 +68,21 @@ Just install [_pacpush from the
 AUR_](https://aur.archlinux.org/packages/pacpush/) to the local and
 remote hosts.
 
-## CONFIGURATION
+## SSH AND KEY CONFIGURATION
 
-The default configuration file is installed to
-`/usr/share/pacpush/pacpush.conf`. Copy this file to your personal
-`~/.config/pacpush.conf` if you want to change it. Currently the only
-configuration value is `clonedir` which is the location of your AUR
-helpers download/build directory. This is the directory from which AUR
-packages are rsync'd from the local host to remote hosts. It only needs
-to be configured on the local host. `clonedir` can be set to a single
-directory, or a list of directories. Ensure that `clonedir` is set to,
-or at least contains, the directory your AUR helper is using. See the
-default setting and examples in the default configuration file. If you
-use multiple AUR helpers then set each one's directory in a list in
-`clonedir`.
-
-## SSH KEY CONFIGURATION
+You run `pacpush` directly on the command line as your normal user (not
+as root and not using `sudo` explicitly) specifying as arguments the
+host, or hosts, you want to update. The utility will re-invoke itself
+using `sudo` and will push the cached AUR build directory of the
+invoking user (i.e. the `clonedir` location[s] from the configuration
+file).
 
 You need to set up root ssh access from your host machine to the remote
-machine[s] for `pacpush` to work. For security and convenience, it is
+machine[s] for this to work. For security and convenience, it is
 essential to use an ssh key. The following procedure copies your
-personal public ssh key to the remote root account. Your first need to set
-up your own personal ssh key pair of course, see Google for that part.
+personal public ssh key to the remote root account. Your first need to
+set up your own personal ssh key pair of course, see Google for that
+part.
 
 On a remote host to which you want to `pacpush` (assuming you have
 already set up personal ssh access to that host):
@@ -103,18 +99,28 @@ Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
 session authenticates against your personal ssh key.
 
-## HOW TO USE
+## CONFIGURATION FILE
 
-You run it directly on the command line as your normal user (not as root
-and not using sudo explicitly) specifying as arguments the host, or
-hosts, you want to update. The utility will re-invoke itself using sudo
-and will push the cached AUR build directory of the invoking user (i.e.
-the `clonedir` location[s] from the configuration file).
+The default configuration file is installed to
+`/usr/share/pacpush/pacpush.conf`. Copy this file to your personal
+location at `~/.config/pacpush/pacpush.conf` if you want to change it.
 
-If you specify multiple hosts then the program will update them in
-parallel. You can limit, or increase, the number of parallel updates
-using the `-p/--parallel-count` option. Update messages are output in a
-unique color for each host.
+You may want to change `clonedir` setting which is the location of your
+AUR helpers download/build directory. This is the directory from which
+AUR packages are rsync'd from the local host to remote hosts. It only
+needs to be configured on the local host. `clonedir` can be set to a
+single directory, or a list of directories. Ensure that `clonedir` is
+set to, or at least contains, the directory your AUR helper is using.
+See the default setting and examples in the default configuration file.
+If you use multiple AUR helpers then set each one's directory in a list
+in `clonedir`. Directories which don't exist are ignored.
+
+You can also create and specify a custom
+[`ssh_config`](https://linux.die.net/man/5/ssh_config) file use and
+specify it in your `pacpush.conf` file using the `ssh-config-file`
+setting. This allows you to specify ssh settings for pacpush use, either
+globally, or per host. See [`man
+ssh_config`](https://linux.die.net/man/5/ssh_config) for details.
 
 ## USAGE
 
@@ -149,7 +155,7 @@ options:
   -C, --no-color        do not color output lines
   -M, --mirrorlist      also sync mirrorlist file
   -F SSH_CONFIG_FILE, --ssh-config-file SSH_CONFIG_FILE
-                        ssh configuration file
+                        pacpush specific ssh configuration file
 ```
 
 ## LICENSE
