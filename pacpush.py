@@ -92,6 +92,7 @@ def pacman(opt):
 def report_updates():
     'Report all installed native and AUR packages with updates pending'
     import requests
+    from pyalpm import vercmp
 
     # Print out version updates for standard packages
     if not args.aur_only:
@@ -127,7 +128,7 @@ def report_updates():
         name = str(pkg.get('Name'))
         newver = pkg.get('Version', '?')
         oldver = pkgs.get(name)
-        if oldver and oldver != newver:
+        if oldver and vercmp(oldver, newver) < 0:
             print(f':: {name} {oldver} -> {newver}')
 
 def run_user():

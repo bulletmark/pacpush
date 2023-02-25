@@ -25,7 +25,7 @@ setup(
     keywords='pacman',
     py_modules=[module],
     python_requires='>=3.7',
-    install_requires=['requests', 'ruamel.yaml'],
+    install_requires=['requests', 'ruamel.yaml', 'pyalpm'],
     data_files=[
         (f'share/{name}', ['README.md', f'{name}.conf']),
     ],
