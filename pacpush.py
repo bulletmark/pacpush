@@ -49,36 +49,7 @@ CONFNAME = f'{PROGNAME}.conf'
 USERCNF = Path(os.getenv('XDG_CONFIG_HOME') or os.path.expanduser('~/.config'))
 CONFDIRS = (USERCNF / PROGNAME, USERCNF, Path(f'/usr/share/{PROGNAME}'))
 
-# Process command line options
-opt = argparse.ArgumentParser(description=__doc__)
-opt.add_argument('-n', '--dryrun', action='store_true', help='dry run only')
-opt.add_argument('-m', '--no-machcheck', action='store_true',
-        help='do not check machine type compatibility')
-opt.add_argument('-p', '--parallel-count', type=int, default=10,
-        help='max number of hosts to update in parallel. '
-        'Default is %(default)d.')
-opt.add_argument('-c', '--conffile',
-        help='alternative configuration file')
-opt.add_argument('-u', '--updates', action='store_true',
-        help='just report all installed packages with updates pending, '
-        'including AUR packages')
-opt.add_argument('-s', '--sys-only', action='store_true',
-        help='only sync/report system packages, not AUR')
-opt.add_argument('-a', '--aur-only', action='store_true',
-        help='only sync/report AUR packages, not system')
-opt.add_argument('-C', '--no-color', action='store_true',
-        help='do not color output lines')
-opt.add_argument('-M', '--mirrorlist', action='store_true',
-        help='also sync mirrorlist file')
-opt.add_argument('-F', '--ssh-config-file',
-        help=f'{PROGNAME} specific ssh configuration file')
-opt.add_argument('hosts', nargs='*', help='hosts to update')
-opt.add_argument('--env', help=argparse.SUPPRESS)
-args = opt.parse_args()
-
-# Only use color for terminal output
-if not sys.stdout.isatty():
-    args.no_color = True
+args = None
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
@@ -329,6 +300,39 @@ def run_root():
 
 def main():
     'Main processing ..'
+    global args
+    # Process command line options
+    opt = argparse.ArgumentParser(description=__doc__)
+    opt.add_argument('-n', '--dryrun', action='store_true', help='dry run only')
+    opt.add_argument('-m', '--no-machcheck', action='store_true',
+            help='do not check machine type compatibility')
+    opt.add_argument('-p', '--parallel-count', type=int, default=10,
+            help='max number of hosts to update in parallel. '
+            'Default is %(default)d.')
+    opt.add_argument('-c', '--conffile',
+            help='alternative configuration file')
+    opt.add_argument('-u', '--updates', action='store_true',
+            help='just report all installed packages with updates pending, '
+            'including AUR packages')
+    opt.add_argument('-s', '--sys-only', action='store_true',
+            help='only sync/report system packages, not AUR')
+    opt.add_argument('-a', '--aur-only', action='store_true',
+            help='only sync/report AUR packages, not system')
+    opt.add_argument('-C', '--no-color', action='store_true',
+            help='do not color output lines')
+    opt.add_argument('-M', '--mirrorlist', action='store_true',
+            help='also sync mirrorlist file')
+    opt.add_argument('-F', '--ssh-config-file',
+            help=f'{PROGNAME} specific ssh configuration file')
+    opt.add_argument('hosts', nargs='*', help='hosts to update')
+    opt.add_argument('--env', help=argparse.SUPPRESS)
+
+    args = opt.parse_args()
+
+    # Only use color for terminal output
+    if not sys.stdout.isatty():
+        args.no_color = True
+
     if args.updates:
         return report_updates()
 
