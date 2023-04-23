@@ -188,6 +188,10 @@ def run_user():
         if ssh_config_file:
             ssh_config_file = conffile.resolve().parent / \
                     Path(ssh_config_file).expanduser()
+        else:
+            ssh_config_file = Path('~/.ssh/config').expanduser()
+            if not ssh_config_file.exists():
+                ssh_config_file = None
 
     if ssh_config_file:
         cmd.append(f'--ssh-config-file="{ssh_config_file}"')
@@ -217,7 +221,7 @@ def synchost(num, host, clonedirs):
                 print(color + txt + COLOR_reset)
 
     def rsync(src):
-        cmd = f'rsync -arRO --info=name1 {rsync_args} {src} {host}:/'
+        cmd = f'rsync -arRO --info=name1 {rsync_args} {src} root@{host}:/'
         res = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1,
                                text=True, shell=True)
 
@@ -225,11 +229,11 @@ def synchost(num, host, clonedirs):
             log(f'synced {line.strip()}')
 
     if not args.no_machcheck:
-        res = subprocess.run(f'ssh{ssh_args} {host} uname -m',
+        res = subprocess.run(f'ssh{ssh_args} root@{host} uname -m',
                              text=True, shell=True, stdout=subprocess.PIPE)
 
         if res.returncode != 0:
-            log(f'ssh failed. Have you set up root ssh access to {host}?')
+            log(f'ssh check failed. Have you set up root ssh access to {host}?')
             return
 
         hostmach = res.stdout.strip()
@@ -255,8 +259,12 @@ def synchost(num, host, clonedirs):
     aopt = ' --aur-only' if args.aur_only else ''
     sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
 
-    res = subprocess.run(f'ssh{ssh_args} {host} {PROG}{aopt}{sopt} -u',
+    res = subprocess.run(f'ssh{ssh_args} root@{host} {PROG}{aopt}{sopt} -u',
                          text=True, shell=True, stdout=subprocess.PIPE)
+
+    if res.returncode != 0:
+        log(f'ssh failed. Have you set up root ssh access to {host}?')
+        return
 
     filelist = []
     name = None

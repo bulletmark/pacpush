@@ -99,6 +99,14 @@ Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
 session authenticates against your personal ssh key.
 
+For rsync/ssh configuration convenience, `rsync` and `ssh` commands run
+by root are specified with your personal user's ssh configuration file
+`~/.ssh/config` if it exists (and unless you specify an explicit ssh
+config file for pacpush usage as described in the next section). Note
+`rsync` and `ssh` commands run on behalf of root user explicitly specify
+target `root@host` so that any `User` specification in your personal ssh
+configuration for any host is ignored.
+
 ## CONFIGURATION FILE
 
 The default configuration file is installed to
@@ -116,11 +124,12 @@ If you use multiple AUR helpers then set each one's directory in a list
 in `clonedir`. Directories which don't exist are ignored.
 
 You can also create and specify a custom
-[`ssh_config`](https://linux.die.net/man/5/ssh_config) file use and
-specify it in your `pacpush.conf` file using the `ssh-config-file`
-setting. This allows you to specify ssh settings for pacpush use, either
-globally, or per host. See [`man
-ssh_config`](https://linux.die.net/man/5/ssh_config) for details.
+[`ssh_config`](https://linux.die.net/man/5/ssh_config) file in your
+`pacpush.conf` file using the `ssh_config_file` setting (or on the
+command line using the `-F/--ssh-config-file` option). This allows you
+to specify ssh settings for pacpush use, either globally, or for each
+host. See [`man ssh_config`](https://linux.die.net/man/5/ssh_config) for
+details on how to specify ssh (including per host) settings.
 
 ## USAGE
 

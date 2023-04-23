@@ -15,7 +15,7 @@ doc:
 	update-readme-usage
 
 check:
-	flake8 $(PYNAME).py setup.py
+	ruff .
 	vermin --no-tips -i $(PYNAME).py setup.py
 	python3 setup.py check
 
