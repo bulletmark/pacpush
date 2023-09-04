@@ -1,10 +1,11 @@
 ## PACPUSH
 [![AUR](https://img.shields.io/aur/version/pacpush)](https://aur.archlinux.org/packages/pacpush/)
+[![PyPi](https://img.shields.io/pypi/v/pacpush)](https://pypi.org/project/pacpush/)
 
-[pacpush](http://github.com/bulletmark/pacpush) is a small and simple
-command line utility which you can use to manually push `pacman` and
-your AUR helper Arch Linux package updates to other machines to avoid
-having to download them more than once via the web.
+[pacpush](http://github.com/bulletmark/pacpush) is a simple command line
+utility which Arch Linux users can use to manually push `pacman` and AUR
+helper Arch Linux package updates to other machines to avoid having to
+download them more than once via the web.
 
 My use case follows as a good example of what this utility is for.
 
@@ -68,6 +69,21 @@ Just install [_pacpush from the
 AUR_](https://aur.archlinux.org/packages/pacpush/) to the local and
 remote hosts.
 
+Note pacpush is also available [on
+PyPI](https://pypi.org/project/pacpush/) if you prefer so just ensure
+that [`pipx`](https://pypa.github.io/pipx/) is installed then type the
+following. Requires Python 3.7 or later.
+
+```
+$ pipx install pacpush
+```
+
+To upgrade:
+
+```
+$ pipx upgrade pacpush
+```
+
 ## SSH AND KEY CONFIGURATION
 
 You run `pacpush` directly on the command line as your normal user (not
@@ -87,13 +103,15 @@ part.
 On a remote host to which you want to `pacpush` (assuming you have
 already set up personal ssh access to that host):
 
-    sudo mkdir -p /root/.ssh
-    sudo chmod 700 /root/.ssh
-    sudo cp ~/.ssh/authorized_keys /root/.ssh
+```bash
+$ sudo mkdir -p /root/.ssh
+$ sudo chmod 700 /root/.ssh
+$ sudo cp ~/.ssh/authorized_keys /root/.ssh
 
-    # Possibly remove any keys you don't want root to allow if you have
-    # more than one:
-    sudoedit /root/.ssh/authorized_keys
+# Possibly remove any keys you don't want root to allow if you have
+# more than one:
+$ sudoedit /root/.ssh/authorized_keys
+```
 
 Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
@@ -109,9 +127,15 @@ configuration for any host is ignored.
 
 ## CONFIGURATION FILE
 
-The default configuration file is installed to
-`/usr/share/pacpush/pacpush.conf`. Copy this file to your personal
-location at `~/.config/pacpush/pacpush.conf` if you want to change it.
+A default configuration (see
+[`pacpush/pacpush.conf`](pacpush/pacpush.conf)) is used if you don't
+have a personal configuration file at `~/.config/pacpush/pacpush.conf`.
+If you want to copy the default to create a personal configuration file
+to edit, just type:
+
+```bash
+$ pacpush -i
+```
 
 You may want to change `clonedir` setting which is the location of your
 AUR helpers download/build directory. This is the directory from which
@@ -136,9 +160,9 @@ details on how to specify ssh (including per host) settings.
 Type `pacpush -h` to view the usage summary:
 
 ```
-usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-u] [-s]
-                  [-a] [-C] [-M] [-F SSH_CONFIG_FILE]
-                  [hosts ...]
+usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-i] [-u]
+                   [-s] [-a] [-C] [-M] [-F SSH_CONFIG_FILE]
+                   [hosts ...]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
 to avoid those other hosts having to download the same new package lists and
@@ -157,6 +181,7 @@ options:
                         10.
   -c CONFFILE, --conffile CONFFILE
                         alternative configuration file
+  -i, --initconf        create default configuration file
   -u, --updates         just report all installed packages with updates
                         pending, including AUR packages
   -s, --sys-only        only sync/report system packages, not AUR

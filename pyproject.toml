@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pacpush"
+description = "Utility to push an Arch host's package and AUR caches to other hosts"
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["pacman", "pacserve"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+]
+dynamic = ["version"]
+dependencies = [
+  "requests",
+  "ruamel.yaml",
+  "pyalpm",
+  "importlib-resources; python_version < '3.10'",
+]
+
+[[project.authors]]
+name = "Mark Blakeney"
+email = "mark.blakeney@bullet-systems.net"
+
+[project.urls]
+Homepage = "https://github.com/bulletmark/pacpush"
+
+[project.scripts]
+pacpush = "pacpush.pacpush:main"
+
+[project.license]
+text = "GPLv3"
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+
+[tool.edit-lint]
+linters = [
+  "ruff",
+  "flake8",
+]
+
+# vim:se sw=2:

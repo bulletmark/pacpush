@@ -47,9 +47,16 @@ PROG = Path(sys.argv[0]).resolve()
 PROGNAME = PROG.stem
 CONFNAME = f'{PROGNAME}.conf'
 USERCNF = Path(os.getenv('XDG_CONFIG_HOME') or os.path.expanduser('~/.config'))
-CONFDIRS = (USERCNF / PROGNAME, USERCNF, Path(f'/usr/share/{PROGNAME}'))
 
 args = None
+
+def get_default_confdir():
+    if sys.version_info >= (3, 10):
+        from importlib.resources import files
+    else:
+        from importlib_resources import files
+
+    return Path(files(PROGNAME))
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
@@ -112,6 +119,9 @@ def run_user():
         if not conffile.exists():
             return f'Conf file "{conffile}" does not exist.'
     else:
+        # Search for user conf file (including at old depreciated
+        # location) and then use default system conf file if not found
+        CONFDIRS = (USERCNF / PROGNAME, USERCNF, get_default_confdir())
         for confdir in CONFDIRS:
             conffile = confdir / CONFNAME
             if conffile.exists():
@@ -311,6 +321,8 @@ def main():
             'Default is %(default)d.')
     opt.add_argument('-c', '--conffile',
             help='alternative configuration file')
+    opt.add_argument('-i', '--initconf', action='store_true',
+            help='create default configuration file')
     opt.add_argument('-u', '--updates', action='store_true',
             help='just report all installed packages with updates pending, '
             'including AUR packages')
@@ -328,6 +340,18 @@ def main():
     opt.add_argument('--env', help=argparse.SUPPRESS)
 
     args = opt.parse_args()
+
+    if args.initconf:
+        # Create default configuration file
+        conf = USERCNF / PROGNAME / CONFNAME
+        if conf.exists():
+            return f'ERROR: Configuration file {conf} already exists. '\
+                    'Delete it first.'
+        conf.parent.mkdir(parents=True, exist_ok=True)
+        import shutil
+        shutil.copyfile(get_default_confdir() / CONFNAME, conf)
+        print(f'Configuration file {conf} created.')
+        return
 
     # Only use color for terminal output
     if not sys.stdout.isatty():
