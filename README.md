@@ -161,7 +161,7 @@ Type `pacpush -h` to view the usage summary:
 
 ```
 usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-i] [-u]
-                   [-s] [-a] [-C] [-M] [-F SSH_CONFIG_FILE]
+                   [-s] [-a] [-C] [-N] [-M] [-F SSH_CONFIG_FILE]
                    [hosts ...]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
@@ -186,7 +186,9 @@ options:
                         pending, including AUR packages
   -s, --sys-only        only sync/report system packages, not AUR
   -a, --aur-only        only sync/report AUR packages, not system
-  -C, --no-color        do not color output lines
+  -C, --no-color        do not color output messages
+  -N, --no-color-invert
+                        do not invert color on error/priority messages
   -M, --mirrorlist      also sync mirrorlist file
   -F SSH_CONFIG_FILE, --ssh-config-file SSH_CONFIG_FILE
                         pacpush specific ssh configuration file

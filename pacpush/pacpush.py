@@ -22,19 +22,20 @@ PACLIST = Path('/var/lib/pacman/sync')
 PACPKGS = Path('/var/cache/pacman/pkg')
 MIRRORS = Path('/etc/pacman.d/mirrorlist')
 
-# Define ANSI escape sequences for colors ..
-COLOR_red = '\033[31m'
-COLOR_green = '\033[32m'
-COLOR_yellow = '\033[33m'
-COLOR_blue = '\033[34m'
-COLOR_magenta = '\033[35m'
-COLOR_cyan = '\033[36m'
-COLOR_white = '\033[37m'
-COLOR_reset = '\033[39m'
+# Define ANSI escape sequences for colors (fg, invert fg+bg)
+# Refer https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+COLOR_red = ('\033[31m', '\033[30;41m')
+COLOR_green = ('\033[32m', '\033[30;42m')
+COLOR_yellow = ('\033[33m', '\033[30;43m')
+COLOR_blue = ('\033[34m', '\033[30;44m')
+COLOR_magenta = ('\033[35m', '\033[30;45m')
+COLOR_cyan = ('\033[36m', '\033[30;46m')
+
+COLOR_reset = '\033[39;49m'
 
 # Colors to output host messages
 COLORS = (COLOR_green, COLOR_yellow, COLOR_magenta, COLOR_cyan,
-          COLOR_red, COLOR_blue, COLOR_reset)
+          COLOR_red, COLOR_blue)
 
 # Where we fetch AUR versions from
 AURWEB = 'https://aur.archlinux.org/rpc'
@@ -43,8 +44,7 @@ HOST = platform.node()
 MACH = platform.machine()
 
 # Conf file, search first for user file then system file
-PROG = Path(sys.argv[0]).resolve()
-PROGNAME = PROG.stem
+PROGNAME= Path(sys.argv[0]).stem
 CONFNAME = f'{PROGNAME}.conf'
 USERCNF = Path(os.getenv('XDG_CONFIG_HOME') or os.path.expanduser('~/.config'))
 
@@ -192,14 +192,15 @@ def synchost(num, host, clonedirs):
         ssh_args += f' -F {args.ssh_config_file}'
         rsync_args += f' -e "ssh -F {args.ssh_config_file}"'
 
-    def log(msg):
+    def log(msg, *, priority=False):
         'Log messages for update to host'
         txt = f'{host}: {msg}'
+        if not args.no_color:
+            txt = color[priority and not args.no_color_invert] + \
+                    txt + COLOR_reset
+
         with lock:
-            if args.no_color:
-                print(txt)
-            else:
-                print(color + txt + COLOR_reset)
+            print(txt)
 
     def rsync(src):
         cmd = f'rsync -arRO --info=name1 {rsync_args} {src} root@{host}:/'
@@ -214,12 +215,14 @@ def synchost(num, host, clonedirs):
                              text=True, shell=True, stdout=subprocess.PIPE)
 
         if res.returncode != 0:
-            log(f'ssh check failed. Have you set up root ssh access to {host}?')
+            log(f'ssh check failed. Have you set up root ssh access to {host}?',
+                priority=True)
             return
 
         hostmach = res.stdout.strip()
         if hostmach != MACH:
-            log(f'{HOST} type={MACH} does not match {host} type={hostmach}.')
+            log(f'{HOST} type={MACH} does not match {host} type={hostmach}.',
+                priority=True)
             return
 
     # Push the current package lists to the host then work out what
@@ -240,11 +243,12 @@ def synchost(num, host, clonedirs):
     aopt = ' --aur-only' if args.aur_only else ''
     sopt = ' --sys-only' if args.sys_only or not clonedirs else ''
 
-    res = subprocess.run(f'ssh{ssh_args} root@{host} {PROG}{aopt}{sopt} -u',
+    res = subprocess.run(f'ssh{ssh_args} root@{host} {PROGNAME}{aopt}{sopt} -u',
                          text=True, shell=True, stdout=subprocess.PIPE)
 
     if res.returncode != 0:
-        log(f'ssh failed. Have you set up root ssh access to {host}?')
+        log(f'ssh failed. Have you set up root ssh access to {host}?',
+            priority=True)
         return
 
     filelist = []
@@ -277,16 +281,16 @@ def synchost(num, host, clonedirs):
                 log(f'{pkg} (not available)')
 
     if filelist:
-        log('syncing updated packages ..')
+        log('syncing updated packages ..', priority=True)
         with tempfile.NamedTemporaryFile() as fp:
             fp.writelines(bytes(line) + b'\n' for line in filelist)
             fp.flush()
             rsync(f'--files-from {fp.name} /')
-        log('finished syncing packages.')
+        log('finished syncing packages.', priority=True)
     elif name:
-        log('no packages available.')
+        log('no packages available.', priority=True)
     else:
-        log('already up to date.')
+        log('already up to date.', priority=True)
 
 def run_root():
     'Run as root to do updates'
@@ -331,7 +335,9 @@ def main():
     opt.add_argument('-a', '--aur-only', action='store_true',
             help='only sync/report AUR packages, not system')
     opt.add_argument('-C', '--no-color', action='store_true',
-            help='do not color output lines')
+            help='do not color output messages')
+    opt.add_argument('-N', '--no-color-invert', action='store_true',
+            help='do not invert color on error/priority messages')
     opt.add_argument('-M', '--mirrorlist', action='store_true',
             help='also sync mirrorlist file')
     opt.add_argument('-F', '--ssh-config-file',
