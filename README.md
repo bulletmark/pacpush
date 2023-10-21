@@ -45,7 +45,7 @@ using the `-p/--parallel-count` option. Update messages are output in a
 unique color for each host.
 
 Note that `pacpush` should work with any AUR helper so long as you set
-`clonedir` appropriately in your configuration file, see the
+`--aur-build-dir` appropriately in your configuration file, see the
 [CONFIGURATION FILE](#configuration-file) section below for details.
 
 The latest version and documentation is available at
@@ -72,7 +72,7 @@ remote hosts.
 Note pacpush is also available [on
 PyPI](https://pypi.org/project/pacpush/) if you prefer so just ensure
 that [`pipx`](https://pypa.github.io/pipx/) is installed then type the
-following. Requires Python 3.7 or later.
+following to install on each machine. Requires Python 3.7 or later.
 
 ```
 $ pipx install pacpush
@@ -86,12 +86,10 @@ $ pipx upgrade pacpush
 
 ## SSH AND KEY CONFIGURATION
 
-You run `pacpush` directly on the command line as your normal user (not
-as root and not using `sudo` explicitly) specifying as arguments the
+You run `pacpush` directly on the command line as your normal user, not
+as root and not using `sudo` explicitly. You specify as arguments the
 host, or hosts, you want to update. The utility will re-invoke itself
-using `sudo` and will push the cached AUR build directory of the
-invoking user (i.e. the `clonedir` location[s] from the configuration
-file).
+using `sudo` and will push the required package updates.
 
 You need to set up root ssh access from your host machine to the remote
 machine[s] for this to work. For security and convenience, it is
@@ -114,55 +112,81 @@ $ sudoedit /root/.ssh/authorized_keys
 ```
 
 Note that the `sudo` invoked by `pacpush` on itself when you run it as
-your normal user passes on SSH_AUTH_SOCK so that the remote root ssh
+your normal user passes on `$SSH_AUTH_SOCK` so that the remote root ssh
 session authenticates against your personal ssh key.
 
 For rsync/ssh configuration convenience, `rsync` and `ssh` commands run
 by root are specified with your personal user's ssh configuration file
-`~/.ssh/config` if it exists (and unless you specify an explicit ssh
-config file for pacpush usage as described in the next section). Note
-`rsync` and `ssh` commands run on behalf of root user explicitly specify
-target `root@host` so that any `User` specification in your personal ssh
-configuration for any host is ignored.
+`~/.ssh/config` if it exists (unless you specify an explicit
+`--ssh-config-file` for pacpush usage as described in the next section).
+Note `rsync` and `ssh` commands run on behalf of root user explicitly
+specify target `root@host` so that any `User` specification in your
+personal ssh configuration for any host is ignored.
 
 ## CONFIGURATION FILE
 
-A default configuration (see
-[`pacpush/pacpush.conf`](pacpush/pacpush.conf)) is used if you don't
-have a personal configuration file at `~/.config/pacpush/pacpush.conf`.
-If you want to copy the default to create a personal configuration file
-to edit, just type:
+:warning: __From pacpush version 3 onwards, the format of the
+`~/.config/pacpush/pacpush.conf` file has changed
+from [YAML](https://yaml.org/) to a simple text file where you
+specify any of the pacpush [startup options](#usage).__
 
-```bash
-$ pacpush -i
-```
+You can add default options to a personal configuration file
+`~/.config/pacpush/pacpush.conf`. If that file exists then each line of
+options will be concatenated and automatically prepended to your
+`pacpush` command line arguments. Comments in the file (i.e. starting
+with a `#`) are ignored. Type `pacpush -h` to see all [supported
+options](#usage). The configuration file is read for the invoking user
+only on the local host client machine. The configuration file is ignored
+on any remote machine you are pushing to (because all required options
+are passed from the client).
 
-You may want to change `clonedir` setting which is the location of your
-AUR helpers download/build directory. This is the directory from which
-AUR packages are rsync'd from the local host to remote hosts. It only
-needs to be configured on the local host. `clonedir` can be set to a
-single directory, or a list of directories. Ensure that `clonedir` is
-set to, or at least contains, the directory your AUR helper is using.
-See the default setting and examples in the default configuration file.
-If you use multiple AUR helpers then set each one's directory in a list
-in `clonedir`. Directories which don't exist are ignored.
+You may want to change `--aur-build-dir` setting which is the location
+of your AUR helpers download/build directory. This is the directory from
+which AUR packages are rsync'd from the local host to remote hosts.
+`--aur-build-dir` can be set to a single directory string, or a list of
+directories by inserting a "`;`" between multiple directory names.
+Ensure that `--aur-build-dir` is set to, or at least contains, the build
+directory your AUR helper uses. Directories which don't exist are
+ignored.
+
+**Example Settings**
+
+AUR Helper | Build directory setting
+---------- | -----------------------
+`yay` | `--aur-build-dir ~/.cache/yay`.
+`paru` | `--aur-build-dir ~/.cache/paru/clone`.
+
+The default configuration is to sync many of the common AUR helper
+directories that exist on your host machine. See the default
+`--aur-build-dir` directories listed by `pacpush -h`. Pacpush will sync
+packages in each `--aur-build-dir` directory which exists, and is
+pending an update. E.g. if you were using trizen some time ago, and am
+now using yay instead, then you could keep this default setting and just
+do a `rm -rf ~/.cache/trizen` because pacpush ignores `--aur-build-dir`
+directories which don't exist. Or you could just set `--aur-build-dir
+~/.cache/yay` in your `~/.config/pacpush/pacpush.conf` which is the
+slightly more efficient approach.
 
 You can also create and specify a custom
-[`ssh_config`](https://linux.die.net/man/5/ssh_config) file in your
-`pacpush.conf` file using the `ssh_config_file` setting (or on the
-command line using the `-F/--ssh-config-file` option). This allows you
-to specify ssh settings for pacpush use, either globally, or for each
-host. See [`man ssh_config`](https://linux.die.net/man/5/ssh_config) for
-details on how to specify ssh (including per host) settings.
+[`--ssh-config-file`](https://linux.die.net/man/5/ssh_config) file. This
+allows you to specify ssh settings for pacpush use, either globally, or
+for each host. See [`man
+ssh_config`](https://linux.die.net/man/5/ssh_config) for details on how
+to specify ssh (including per host) settings. If the specified
+`--ssh-config-file` path is relative then it is taken to be relative to
+`~/.config/pacpush/`.
+
+Any of the options specified in the next [Usage](#usage) section can be
+specified in `~/.config/pacpush/pacpush.conf`.
 
 ## USAGE
 
 Type `pacpush -h` to view the usage summary:
 
 ```
-usage: pacpush [-h] [-n] [-m] [-p PARALLEL_COUNT] [-c CONFFILE] [-i] [-u]
-                   [-s] [-a] [-C] [-N] [-M] [-F SSH_CONFIG_FILE]
-                   [hosts ...]
+usage: pacpush [-h] [-b AUR_BUILD_DIR] [-n] [-m] [-p PARALLEL_COUNT] [-u]
+                  [-s] [-a] [-C] [-N] [-M] [-F SSH_CONFIG_FILE] [-V]
+                  [hosts ...]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
 to avoid those other hosts having to download the same new package lists and
@@ -174,14 +198,17 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+  -b AUR_BUILD_DIR, --aur-build-dir AUR_BUILD_DIR
+                        AUR build directory[s]. Can specify one, or multiple
+                        directories separated by ";". Default is "~/.cache/yay
+                        ;~/.cache/paru/clone;~/.cache/trizen;~/.cache/pikaur/a
+                        ur_repos;~/.cache/aurman". Non-existent directories
+                        are ignored.
   -n, --dryrun          dry run only
   -m, --no-machcheck    do not check machine type compatibility
   -p PARALLEL_COUNT, --parallel-count PARALLEL_COUNT
                         max number of hosts to update in parallel. Default is
                         10.
-  -c CONFFILE, --conffile CONFFILE
-                        alternative configuration file
-  -i, --initconf        create default configuration file
   -u, --updates         just report all installed packages with updates
                         pending, including AUR packages
   -s, --sys-only        only sync/report system packages, not AUR
@@ -191,7 +218,12 @@ options:
                         do not invert color on error/priority messages
   -M, --mirrorlist      also sync mirrorlist file
   -F SSH_CONFIG_FILE, --ssh-config-file SSH_CONFIG_FILE
-                        pacpush specific ssh configuration file
+                        ssh configuration file to use. Default is
+                        "~/.ssh/config" (if it exists).
+  -V, --version         show pacpush version
+
+Note you can set default starting options in
+$HOME/.config/pacpush/pacpush.conf.
 ```
 
 ## LICENSE

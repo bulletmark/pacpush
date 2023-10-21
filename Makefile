@@ -4,7 +4,8 @@ PYNAME = $(subst -,_,$(NAME))
 check:
 	ruff .
 	flake8 .
-	vermin -vv --exclude importlib.resources.files --no-tips -i */*.py
+	vermin -vv --exclude importlib.metadata --eval-annotations \
+	       	--no-tips -i *.py
 
 build:
 	rm -rf dist
