@@ -134,7 +134,10 @@ def run_user(argv):
 
     return subprocess.run(' '.join(cmd), shell=True).returncode
 
-def synchost(num, host, log_lock):
+# Allocate lock for log messages
+log_lock = multiprocessing.Lock()
+
+def synchost(num, host):
     'Sync to given host'
     color = COLORS[num % len(COLORS)]
 
@@ -253,17 +256,14 @@ def run_root():
     # Remove any duplicate hosts from argument list
     hosts = list(dict.fromkeys(args.hosts))
 
-    # Allocate lock for log messages
-    log_lock = multiprocessing.Lock()
-
     if len(hosts) == 1 or args.parallel_count <= 1:
         # May as well do in same process if only 1 host or doing in series
         for n, h in enumerate(hosts):
-            synchost(n, h, log_lock)
+            synchost(n, h)
     else:
         # Farm out the jobs to a pool of processes
         with multiprocessing.Pool(min(len(hosts), args.parallel_count)) as p:
-            p.starmap(synchost, ((n, h, log_lock) for n, h in enumerate(hosts)))
+            p.starmap(synchost, ((n, h) for n, h in enumerate(hosts)))
 
 def main():
     'Main processing ..'
