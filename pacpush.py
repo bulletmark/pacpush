@@ -57,6 +57,11 @@ MACH = platform.machine()
 
 args = None
 
+def debug(argv):
+    'Output debug info'
+    from getpass import getuser
+    print(f'# {getuser()}@{HOST}: {sys.argv[0]} {shlex.join(argv)}')
+
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
     res = subprocess.run(f'pacman {opt}'.split(), text=True,
@@ -67,7 +72,10 @@ def pacman(opt):
     return res.stdout.splitlines()
 
 def report_updates():
-    'Report all installed native and AUR packages with updates pending'
+    '''
+    Run on the remote machine to report all installed native and AUR
+    packages with updates pending
+    '''
     import requests
     from pyalpm import vercmp
 
@@ -115,14 +123,16 @@ def run_user(argv):
     cmd = ['sudo', f'SSH_AUTH_SOCK={sock}'] + [sys.argv[0]] + argv
 
     # Build dirs may either be a single dir, or a list of dirs
-    build_dirs_str = args.aur_build_dir or AURBUILD
-    build_dirs = [Path(d).expanduser() for d in build_dirs_str.split(';')]
+    build_dirs_str = args.aur_build_dir \
+            if args.aur_build_dir is not None else AURBUILD
+    build_dirs = [Path(d).expanduser() for d in
+                  build_dirs_str.split(';')] if build_dirs_str else []
 
     # Immediately filter out dirs which don't exist
     build_dirs = [str(d) for d in build_dirs if d.is_dir()]
 
-    # We force set the following dir options even if they are "" so that
-    # we override any default dirs that don't exist
+    # We force set the following dir options even if they are an empty
+    # string so that we override any default dirs that don't exist
     build_dirs_str = ';'.join(build_dirs)
     cmd.append(f'--aur-build-dir="{build_dirs_str}"')
 
@@ -132,7 +142,7 @@ def run_user(argv):
     ssh_config = str(ssh_config_file) if ssh_config_file.is_file() else ''
     cmd.append(f'--ssh-config-file="{ssh_config}"')
 
-    return subprocess.run(' '.join(cmd), shell=True).returncode
+    return subprocess.run(shlex.join(cmd), shell=True).returncode
 
 # Allocate lock for log messages
 log_lock = multiprocessing.Lock()
@@ -196,13 +206,19 @@ def synchost(num, host):
         rsync(arglist)
 
     build_dirs = [Path(p) for p in args.aur_build_dir.split(';')] if \
-            args.aur_build_dir else []
+            args.aur_build_dir and not args.sys_only else []
 
     log('getting list of needed package updates ..')
     aopt = ' --aur-only' if args.aur_only else ''
-    sopt = ' --sys-only' if args.sys_only or not build_dirs else ''
+    sopt = ' --sys-only' if not build_dirs else ''
+    debug = ' -d' if args.debug else ''
 
-    res = subprocess.run(f'ssh{ssh_args} root@{host} {PROG}{aopt}{sopt} -u',
+    if aopt and sopt:
+        log('Error: both --aur-only and (--sys-only or '
+            '!--aur-build-dirs) are set', priority=True)
+
+    res = subprocess.run(f'ssh{ssh_args} root@{host} '
+                         f'{sys.argv[0]}{aopt}{sopt}{debug} -u',
                          text=True, shell=True, stdout=subprocess.PIPE)
 
     if res.returncode != 0:
@@ -213,7 +229,10 @@ def synchost(num, host):
     filelist = []
     name = None
     for line in res.stdout.strip().splitlines():
-        if line.startswith(':'):
+        if line.startswith('#'):
+            if args.debug:
+                print(line)
+        elif line.startswith(':'):
             # AUR package:
             junk, name, oldver, junk, newver = line.split()
 
@@ -302,6 +321,8 @@ def main():
             f'"{SSHCONFIG}" (if it exists).')
     opt.add_argument('-V', '--version', action='store_true',
             help=f'show {PROG} version')
+    opt.add_argument('-d', '--debug', action='store_true',
+            help=f'output debug messages')
     opt.add_argument('hosts', nargs='*', help='hosts to update')
 
     # Merge in default args from user config file. Then parse the
@@ -315,6 +336,9 @@ def main():
 
     argv = shlex.split(cnflines) + sys.argv[1:]
     args = opt.parse_args(argv)
+
+    if args.debug:
+        debug(argv)
 
     if args.version:
         if sys.version_info >= (3, 8):

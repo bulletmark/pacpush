@@ -140,14 +140,14 @@ only on the local host client machine. The configuration file is ignored
 on any remote machine you are pushing to (because all required options
 are passed from the client).
 
-You may want to change `--aur-build-dir` setting which is the location
-of your AUR helpers download/build directory. This is the directory from
-which AUR packages are rsync'd from the local host to remote hosts.
-`--aur-build-dir` can be set to a single directory string, or a list of
-directories by inserting a "`;`" between multiple directory names.
-Ensure that `--aur-build-dir` is set to, or at least contains, the build
-directory your AUR helper uses. Directories which don't exist are
-ignored.
+You may want to change the `--aur-build-dir` setting which is the
+location of your AUR helpers download/build directory. This is the
+directory from which AUR packages are rsync'd from the local host to
+remote hosts. `--aur-build-dir` can be set to a single directory string,
+or a list of directories by inserting a "`;`" between multiple directory
+names. Ensure that `--aur-build-dir` is set to, or at least contains,
+the build directory your AUR helper uses. Directories which don't exist
+are ignored.
 
 **Example Settings**
 
@@ -184,8 +184,9 @@ specified in `~/.config/pacpush/pacpush.conf`.
 Type `pacpush -h` to view the usage summary:
 
 ```
+# mark@lt: pacpush -h
 usage: pacpush [-h] [-b AUR_BUILD_DIR] [-n] [-m] [-p PARALLEL_COUNT] [-u]
-                  [-s] [-a] [-C] [-N] [-M] [-F SSH_CONFIG_FILE] [-V]
+                  [-s] [-a] [-C] [-N] [-M] [-F SSH_CONFIG_FILE] [-V] [-d]
                   [hosts ...]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
@@ -221,6 +222,7 @@ options:
                         ssh configuration file to use. Default is
                         "~/.ssh/config" (if it exists).
   -V, --version         show pacpush version
+  -d, --debug           output debug messages
 
 Note you can set default starting options in
 $HOME/.config/pacpush/pacpush.conf.
