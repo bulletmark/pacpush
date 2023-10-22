@@ -184,7 +184,6 @@ specified in `~/.config/pacpush/pacpush.conf`.
 Type `pacpush -h` to view the usage summary:
 
 ```
-# mark@lt: pacpush -h
 usage: pacpush [-h] [-b AUR_BUILD_DIR] [-n] [-m] [-p PARALLEL_COUNT] [-u]
                   [-s] [-a] [-C] [-N] [-M] [-F SSH_CONFIG_FILE] [-V] [-d]
                   [hosts ...]

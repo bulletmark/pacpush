@@ -60,7 +60,7 @@ args = None
 def debug(argv):
     'Output debug info'
     from getpass import getuser
-    print(f'# {getuser()}@{HOST}: {sys.argv[0]} {shlex.join(argv)}')
+    print(f'# {getuser()}@{HOST}: {sys.argv[0]}', shlex.join(argv))
 
 def pacman(opt):
     'Run pacman with given option[s] and return list of result lines'
@@ -134,15 +134,15 @@ def run_user(argv):
     # We force set the following dir options even if they are an empty
     # string so that we override any default dirs that don't exist
     build_dirs_str = ';'.join(build_dirs)
-    cmd.append(f'--aur-build-dir="{build_dirs_str}"')
+    cmd.extend(['--aur-build-dir', build_dirs_str])
 
     # If ssh config path is relative then make it relative to config file
     ssh_config_file = Path(args.ssh_config_file or SSHCONFIG).expanduser()
     ssh_config_file = CNFFILE.parent / ssh_config_file
     ssh_config = str(ssh_config_file) if ssh_config_file.is_file() else ''
-    cmd.append(f'--ssh-config-file="{ssh_config}"')
+    cmd.extend(['--ssh-config-file', ssh_config])
 
-    return subprocess.run(shlex.join(cmd), shell=True).returncode
+    return subprocess.run(cmd).returncode
 
 # Allocate lock for log messages
 log_lock = multiprocessing.Lock()
@@ -322,7 +322,7 @@ def main():
     opt.add_argument('-V', '--version', action='store_true',
             help=f'show {PROG} version')
     opt.add_argument('-d', '--debug', action='store_true',
-            help=f'output debug messages')
+            help='output debug messages')
     opt.add_argument('hosts', nargs='*', help='hosts to update')
 
     # Merge in default args from user config file. Then parse the
