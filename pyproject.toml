@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "pacpush"
 description = "Utility to push an Arch host's package and AUR caches to other hosts"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["pacman", "pacserve"]
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -16,7 +16,6 @@ dependencies = [
   "platformdirs",
   "requests",
   "pyalpm",
-  "importlib-metadata; python_version < '3.8'",
 ]
 
 [[project.authors]]

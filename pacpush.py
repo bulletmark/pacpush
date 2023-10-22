@@ -136,12 +136,20 @@ def run_user(argv):
     build_dirs_str = ';'.join(build_dirs)
     cmd.extend(['--aur-build-dir', build_dirs_str])
 
-    # If ssh config path is relative then make it relative to config file
-    ssh_config_file = Path(args.ssh_config_file or SSHCONFIG).expanduser()
-    ssh_config_file = CNFFILE.parent / ssh_config_file
-    ssh_config = str(ssh_config_file) if ssh_config_file.is_file() else ''
-    cmd.extend(['--ssh-config-file', ssh_config])
+    if args.ssh_config_file is None:
+        ssh_file = Path(SSHCONFIG).expanduser()
+        ssh_config = str(ssh_file) if ssh_file.is_file() else ''
+    elif not args.ssh_config_file:
+        # If empty string then be sure to disable default ssh config
+        ssh_config = ''
+    else:
+        # If ssh config path is relative then make it relative to config file
+        ssh_file = (CNFFILE.parent / args.ssh_config_file).expanduser()
+        if not ssh_file.is_file():
+            return f'ssh config file {ssh_file} does not exist.'
+        ssh_config = str(ssh_file)
 
+    cmd.extend(['--ssh-config-file', ssh_config])
     return subprocess.run(cmd).returncode
 
 # Allocate lock for log messages
@@ -341,11 +349,7 @@ def main():
         debug(argv)
 
     if args.version:
-        if sys.version_info >= (3, 8):
-            from importlib.metadata import version
-        else:
-            from importlib_metadata import version
-
+        from importlib.metadata import version
         try:
             ver = version(PROG)
         except Exception:
