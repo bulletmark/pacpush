@@ -72,7 +72,7 @@ remote hosts.
 Note pacpush is also available [on
 PyPI](https://pypi.org/project/pacpush/) if you prefer so just ensure
 that [`pipx`](https://pypa.github.io/pipx/) is installed then type the
-following to install on each machine. Requires Python 3.7 or later.
+following to install on each machine. Requires Python 3.8 or later.
 
 ```
 $ pipx install pacpush
