@@ -6,7 +6,6 @@ package lists and updated packages, at least for shared common packages.
 Requires root ssh access to other hosts (it is easier with an auth key).
 '''
 # Author: Mark Blakeney, Mar 2017.
-
 import argparse
 import multiprocessing
 import os
