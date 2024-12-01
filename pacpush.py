@@ -181,7 +181,7 @@ def synchost(num, host):
                                text=True, shell=True)
 
         for line in res.stdout:
-            log(f'synced {line.strip()}')
+            log(f'pushed {line.strip()}')
 
     if not args.no_machcheck:
         res = subprocess.run(f'ssh{ssh_args} root@{host} uname -m',
@@ -209,7 +209,7 @@ def synchost(num, host):
         else:
             mirtxt = ''
 
-        log(f'syncing {MACH} package{mirtxt} lists ..')
+        log(f'pushing {MACH} package{mirtxt} lists ..')
         rsync(arglist)
 
     build_dirs = [Path(p) for p in args.aur_build_dir.split(';')] if \
@@ -266,12 +266,12 @@ def synchost(num, host):
                 log(f'{pkg} (not available)')
 
     if filelist:
-        log('syncing updated packages ..', priority=True)
+        log('pushing updated packages ..', priority=True)
         with tempfile.NamedTemporaryFile() as fp:
             fp.writelines(bytes(line) + b'\n' for line in filelist)
             fp.flush()
             rsync(f'--files-from {fp.name} /')
-        log('finished syncing packages.', priority=True)
+        log('finished pushing packages.', priority=True)
     elif name:
         log('no packages available.', priority=True)
     else:
