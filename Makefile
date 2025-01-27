@@ -3,7 +3,6 @@ PYNAME = $(subst -,_,$(NAME))
 
 check:
 	ruff check .
-	flake8 .
 	vermin -vv --exclude importlib.metadata \
 	       	--no-tips -i *.py
 
