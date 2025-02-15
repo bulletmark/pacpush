@@ -106,8 +106,9 @@ $ sudo mkdir -p /root/.ssh
 $ sudo chmod 700 /root/.ssh
 $ sudo cp ~/.ssh/authorized_keys /root/.ssh
 
-# Possibly remove any keys you don't want root to allow if you have
-# more than one:
+Possibly remove any keys on that remote host you don't want to allow if you have
+more than one for root:
+
 $ sudoedit /root/.ssh/authorized_keys
 ```
 
@@ -122,6 +123,38 @@ by root are specified with your personal user's ssh configuration file
 Note `rsync` and `ssh` commands run on behalf of root user explicitly
 specify target `root@host` so that any `User` specification in your
 personal ssh configuration for any host is ignored.
+
+### TROUBLESHOOTING YOUR SSH CONFIGURATION
+
+If you are having problems with your ssh configuration, you can try what is
+described in this section to help diagnose the issue.
+
+Assume we have a `client` machine from where we want to run the `pacpush`
+command, and a `server` machine which we want to update from `client` remotely.
+
+Run following commands on `client`:
+
+    $ ssh server ls -l .ssh
+    $ rsync server:.ssh
+
+Both the above commands should list the contents of `~/.ssh/` on
+`server` and prove you have your personal user key configured and
+working correctly.
+
+Again on `client`, run the following commands:
+
+    $ sudo SSH_AUTH_SOCK=$SSH_AUTH_SOCK ssh -F $HOME/.ssh/config root@server ls -l .ssh
+    $ sudo SSH_AUTH_SOCK=$SSH_AUTH_SOCK rsync -e "ssh -F $HOME/.ssh/config" root@server:.ssh/
+
+Both the above commands should each list the contents of `/root/.ssh/` on
+`server` and prove you have your personal user key configured and
+working for root user.
+
+A tip for when you trying to diagnose ssh problems is to use the `-v` flag to make
+`ssh` commands more verbose. So, e.g., in the two `sudo` commands above, try also
+adding a `-v` before the `-F`. Also check/monitor your server side `sshd` log.
+E.g. run `journalctl -f -u sshd` in a server side terminal window as you try to
+make the connection.
 
 ## CONFIGURATION FILE
 
@@ -198,7 +231,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -b AUR_BUILD_DIR, --aur-build-dir AUR_BUILD_DIR
+  -b, --aur-build-dir AUR_BUILD_DIR
                         AUR build directory[s]. Can specify one, or multiple
                         directories separated by ";". Default is "~/.cache/yay
                         ;~/.cache/paru/clone;~/.cache/trizen;~/.cache/pikaur/a
@@ -206,7 +239,7 @@ options:
                         are ignored.
   -n, --dryrun          dry run only
   -m, --no-machcheck    do not check machine type compatibility
-  -p PARALLEL_COUNT, --parallel-count PARALLEL_COUNT
+  -p, --parallel-count PARALLEL_COUNT
                         max number of hosts to update in parallel. Default is
                         10.
   -u, --updates         just report all installed packages with updates
@@ -217,7 +250,7 @@ options:
   -N, --no-color-invert
                         do not invert color on error/priority messages
   -M, --mirrorlist      also sync mirrorlist file
-  -F SSH_CONFIG_FILE, --ssh-config-file SSH_CONFIG_FILE
+  -F, --ssh-config-file SSH_CONFIG_FILE
                         ssh configuration file to use. Default is
                         "~/.ssh/config" (if it exists).
   -V, --version         show pacpush version

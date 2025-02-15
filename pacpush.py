@@ -83,6 +83,7 @@ def report_updates():
         for line in pacman('-Qu'):
             name, oldver, junk, *newvers = line.split()
             if len(newvers) > 1 and 'ignored' in newvers[1]:
+
                 continue
 
             newver = newvers[0]
