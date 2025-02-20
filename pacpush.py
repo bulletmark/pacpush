@@ -1,11 +1,14 @@
 #!/usr/bin/python3
-'''
+"""
 Utility to push this Arch hosts system and AUR package caches to other
 host[s] to avoid those other hosts having to download the same new
 package lists and updated packages, at least for shared common packages.
 Requires root ssh access to other hosts (it is easier with an auth key).
-'''
+"""
+
 # Author: Mark Blakeney, Mar 2017.
+from __future__ import annotations
+
 import argparse
 import multiprocessing
 import os
@@ -16,12 +19,15 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from platformdirs import user_config_path
 
 # Default AUR build dir[s] if not specified as command line argument
-AURBUILD = '~/.cache/yay;~/.cache/paru/clone;~/.cache/trizen;'\
-        '~/.cache/pikaur/aur_repos;~/.cache/aurman'
+AURBUILD = (
+    '~/.cache/yay;~/.cache/paru/clone;~/.cache/trizen;'
+    '~/.cache/pikaur/aur_repos;~/.cache/aurman'
+)
 SSHCONFIG = '~/.ssh/config'
 
 # Define paths of interest for pacman packages
@@ -45,8 +51,7 @@ COLOR_cyan = ('\033[36m', '\033[30;46m')
 COLOR_reset = '\033[39;49m'
 
 # Colors to output host messages
-COLORS = (COLOR_green, COLOR_yellow, COLOR_magenta, COLOR_cyan,
-          COLOR_red, COLOR_blue)
+COLORS = (COLOR_green, COLOR_yellow, COLOR_magenta, COLOR_cyan, COLOR_red, COLOR_blue)
 
 # Where we fetch AUR versions from
 AURWEB = 'https://aur.archlinux.org/rpc'
@@ -54,43 +59,48 @@ AURWEB = 'https://aur.archlinux.org/rpc'
 HOST = platform.node()
 MACH = platform.machine()
 
-args = None
+args: Any = None
 
-def debug(argv):
-    'Output debug info'
+# Allocate lock for log messages
+log_lock = multiprocessing.Lock()
+
+
+def debug(argv: list[str]) -> None:
+    "Output debug info"
     from getpass import getuser
+
     print(f'# {getuser()}@{HOST}: {sys.argv[0]}', shlex.join(argv))
 
-def pacman(opt):
-    'Run pacman with given option[s] and return list of result lines'
-    res = subprocess.run(f'pacman {opt}'.split(), text=True,
-            stdout=subprocess.PIPE)
+
+def pacman(opt: str) -> list[str]:
+    "Run pacman with given option[s] and return list of result lines"
+    res = subprocess.run(f'pacman {opt}'.split(), text=True, stdout=subprocess.PIPE)
 
     # Ignore pacman return code since it returns non 0 codes even for
     # valid invocations
     return res.stdout.splitlines()
 
-def report_updates():
-    '''
+
+def report_updates() -> str | None:
+    """
     Run on the remote machine to report all installed native and AUR
     packages with updates pending
-    '''
-    import requests
-    from pyalpm import vercmp
+    """
+    import requests  # type: ignore
+    from pyalpm import vercmp  # type: ignore
 
     # Print out version updates for standard packages
     if not args.aur_only:
         for line in pacman('-Qu'):
-            name, oldver, junk, *newvers = line.split()
+            name, oldver, _, *newvers = line.split()
             if len(newvers) > 1 and 'ignored' in newvers[1]:
-
                 continue
 
             newver = newvers[0]
             print(f'{name} {oldver} -> {newver}')
 
     if args.sys_only:
-        return
+        return None
 
     # Create dict of installed AUR packages and versions
     pkgs = {}
@@ -112,21 +122,24 @@ def report_updates():
     for pkg in r.json().get('results', []):
         name = str(pkg.get('Name'))
         newver = pkg.get('Version', '?')
-        oldver = pkgs.get(name)
+        oldver = pkgs.get(name, '?')
         if oldver and vercmp(oldver, newver) < 0:
             print(f':: {name} {oldver} -> {newver}')
 
-def run_user(argv):
-    'Run as ordinary user'
+
+def run_user(argv: list[str]) -> str | int:
+    "Run as ordinary user"
     # Pass ssh auth so that root uses sudo user's ssh cached key
     sock = os.getenv('SSH_AUTH_SOCK')
     cmd = ['sudo', f'SSH_AUTH_SOCK={sock}'] + [sys.argv[0]] + argv
 
     # Build dirs may either be a single dir, or a list of dirs
-    build_dirs_str = args.aur_build_dir \
-            if args.aur_build_dir is not None else AURBUILD
-    build_dirs = [Path(d).expanduser() for d in
-                  build_dirs_str.split(';')] if build_dirs_str else []
+    build_dirs_str = args.aur_build_dir if args.aur_build_dir is not None else AURBUILD
+    build_dirs = (
+        [Path(d).expanduser() for d in build_dirs_str.split(';')]
+        if build_dirs_str
+        else []
+    )
 
     # Immediately filter out dirs which don't exist
     build_dirs = [str(d) for d in build_dirs if d.is_dir()]
@@ -152,11 +165,9 @@ def run_user(argv):
     cmd.extend(['--ssh-config-file', ssh_config])
     return subprocess.run(cmd).returncode
 
-# Allocate lock for log messages
-log_lock = multiprocessing.Lock()
 
-def synchost(num, host):
-    'Sync to given host'
+def synchost(num: int, host: str) -> None:
+    "Sync to given host"
     color = COLORS[num % len(COLORS)]
 
     ssh_args = ''
@@ -166,37 +177,45 @@ def synchost(num, host):
         ssh_args += f' -F {args.ssh_config_file}'
         rsync_args += f' -e "ssh -F {args.ssh_config_file}"'
 
-    def log(msg, *, priority=False):
-        'Log messages for update to host'
+    def log(msg: str, *, priority: bool = False) -> None:
+        "Log messages for update to host"
         txt = f'{host}: {msg}'
         if not args.no_color:
-            txt = color[priority and not args.no_color_invert] + \
-                    txt + COLOR_reset
+            txt = color[priority and not args.no_color_invert] + txt + COLOR_reset
 
         with log_lock:
             print(txt)
 
-    def rsync(src):
+    def rsync(src: str) -> None:
         cmd = f'rsync -arRO --info=name1 {rsync_args} {src} root@{host}:/'
-        res = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1,
-                               text=True, shell=True)
+        res = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, bufsize=1, text=True, shell=True
+        )
 
-        for line in res.stdout:
+        for line in res.stdout or []:
             log(f'pushed {line.strip()}')
 
     if not args.no_machcheck:
-        res = subprocess.run(f'ssh{ssh_args} root@{host} uname -m',
-                             text=True, shell=True, stdout=subprocess.PIPE)
+        res = subprocess.run(
+            f'ssh{ssh_args} root@{host} uname -m',
+            text=True,
+            shell=True,
+            stdout=subprocess.PIPE,
+        )
 
         if res.returncode != 0:
-            log(f'ssh check failed. Have you set up root ssh access to {host}?',
-                priority=True)
+            log(
+                f'ssh check failed. Have you set up root ssh access to {host}?',
+                priority=True,
+            )
             return
 
         hostmach = res.stdout.strip()
         if hostmach != MACH:
-            log(f'{HOST} type={MACH} does not match {host} type={hostmach}.',
-                priority=True)
+            log(
+                f'{HOST} type={MACH} does not match {host} type={hostmach}.',
+                priority=True,
+            )
             return
 
     # Push the current package lists to the host then work out what
@@ -213,8 +232,11 @@ def synchost(num, host):
         log(f'pushing {MACH} package{mirtxt} lists ..')
         rsync(arglist)
 
-    build_dirs = [Path(p) for p in args.aur_build_dir.split(';')] if \
-            args.aur_build_dir and not args.sys_only else []
+    build_dirs = (
+        [Path(p) for p in args.aur_build_dir.split(';')]
+        if args.aur_build_dir and not args.sys_only
+        else []
+    )
 
     log('getting list of needed package updates ..')
     aopt = ' --aur-only' if args.aur_only else ''
@@ -222,19 +244,23 @@ def synchost(num, host):
     debug = ' -d' if args.debug else ''
 
     if aopt and sopt:
-        log('Error: both --aur-only and (--sys-only or '
-            '!--aur-build-dirs) are set', priority=True)
+        log(
+            'Error: both --aur-only and (--sys-only or !--aur-build-dirs) are set',
+            priority=True,
+        )
 
-    res = subprocess.run(f'ssh{ssh_args} root@{host} '
-                         f'{sys.argv[0]}{aopt}{sopt}{debug} -u',
-                         text=True, shell=True, stdout=subprocess.PIPE)
+    res = subprocess.run(
+        f'ssh{ssh_args} root@{host} {sys.argv[0]}{aopt}{sopt}{debug} -u',
+        text=True,
+        shell=True,
+        stdout=subprocess.PIPE,
+    )
 
     if res.returncode != 0:
-        log(f'ssh failed. Have you set up root ssh access to {host}?',
-            priority=True)
+        log(f'ssh failed. Have you set up root ssh access to {host}?', priority=True)
         return
 
-    filelist = []
+    filelist: list[Any] = []
     name = None
     for line in res.stdout.strip().splitlines():
         if line.startswith('#'):
@@ -242,7 +268,7 @@ def synchost(num, host):
                 print(line)
         elif line.startswith(':'):
             # AUR package:
-            junk, name, oldver, junk, newver = line.split()
+            _, name, _, _, newver = line.split()
 
             # Sync the entire build dir[s], if it exists
             count = len(filelist)
@@ -256,7 +282,7 @@ def synchost(num, host):
                 log(f'AUR {name} (not available)')
         else:
             # System package:
-            name, oldver, junk, newver = line.split()
+            name, _, _, newver = line.split()
 
             pkg = f'{name}-{newver}'
             pkgfiles = PACPKGS.glob(f'{pkg}-*')
@@ -278,8 +304,9 @@ def synchost(num, host):
     else:
         log('already up to date.', priority=True)
 
-def run_root():
-    'Run as root to do updates'
+
+def run_root() -> None:
+    "Run as root to do updates"
     # Remove any duplicate hosts from argument list
     hosts = list(dict.fromkeys(args.hosts))
 
@@ -292,45 +319,79 @@ def run_root():
         with multiprocessing.Pool(min(len(hosts), args.parallel_count)) as p:
             p.starmap(synchost, ((n, h) for n, h in enumerate(hosts)))
 
-def main():
-    'Main processing ..'
+
+def main() -> str | int | None:
+    "Main processing .."
     global args
     is_root = os.geteuid() == 0
 
     # Process command line options
-    opt = argparse.ArgumentParser(description=__doc__,
-            epilog=f'Note you can set default starting options in {CNFFILE}.')
-    opt.add_argument('-b', '--aur-build-dir',
-                     help='AUR build directory[s]. Can specify one, or '
-                     'multiple directories separated by ";". '
-                     f'Default is "{AURBUILD}". '
-                     'Non-existent directories are ignored.')
+    opt = argparse.ArgumentParser(
+        description=__doc__,
+        epilog=f'Note you can set default starting options in {CNFFILE}.',
+    )
+    opt.add_argument(
+        '-b',
+        '--aur-build-dir',
+        help='AUR build directory[s]. Can specify one, or '
+        'multiple directories separated by ";". '
+        f'Default is "{AURBUILD}". '
+        'Non-existent directories are ignored.',
+    )
     opt.add_argument('-n', '--dryrun', action='store_true', help='dry run only')
-    opt.add_argument('-m', '--no-machcheck', action='store_true',
-            help='do not check machine type compatibility')
-    opt.add_argument('-p', '--parallel-count', type=int, default=10,
-            help='max number of hosts to update in parallel. '
-            'Default is %(default)d.')
-    opt.add_argument('-u', '--updates', action='store_true',
-            help='just report all installed packages with updates pending, '
-            'including AUR packages')
-    opt.add_argument('-s', '--sys-only', action='store_true',
-            help='only sync/report system packages, not AUR')
-    opt.add_argument('-a', '--aur-only', action='store_true',
-            help='only sync/report AUR packages, not system')
-    opt.add_argument('-C', '--no-color', action='store_true',
-            help='do not color output messages')
-    opt.add_argument('-N', '--no-color-invert', action='store_true',
-            help='do not invert color on error/priority messages')
-    opt.add_argument('-M', '--mirrorlist', action='store_true',
-            help='also sync mirrorlist file')
-    opt.add_argument('-F', '--ssh-config-file',
-            help='ssh configuration file to use. Default is '
-            f'"{SSHCONFIG}" (if it exists).')
-    opt.add_argument('-V', '--version', action='store_true',
-            help=f'show {PROG} version')
-    opt.add_argument('-d', '--debug', action='store_true',
-            help='output debug messages')
+    opt.add_argument(
+        '-m',
+        '--no-machcheck',
+        action='store_true',
+        help='do not check machine type compatibility',
+    )
+    opt.add_argument(
+        '-p',
+        '--parallel-count',
+        type=int,
+        default=10,
+        help='max number of hosts to update in parallel. Default is %(default)d.',
+    )
+    opt.add_argument(
+        '-u',
+        '--updates',
+        action='store_true',
+        help='just report all installed packages with updates pending, '
+        'including AUR packages',
+    )
+    opt.add_argument(
+        '-s',
+        '--sys-only',
+        action='store_true',
+        help='only sync/report system packages, not AUR',
+    )
+    opt.add_argument(
+        '-a',
+        '--aur-only',
+        action='store_true',
+        help='only sync/report AUR packages, not system',
+    )
+    opt.add_argument(
+        '-C', '--no-color', action='store_true', help='do not color output messages'
+    )
+    opt.add_argument(
+        '-N',
+        '--no-color-invert',
+        action='store_true',
+        help='do not invert color on error/priority messages',
+    )
+    opt.add_argument(
+        '-M', '--mirrorlist', action='store_true', help='also sync mirrorlist file'
+    )
+    opt.add_argument(
+        '-F',
+        '--ssh-config-file',
+        help=f'ssh configuration file to use. Default is "{SSHCONFIG}" (if it exists).',
+    )
+    opt.add_argument(
+        '-V', '--version', action='store_true', help=f'show {PROG} version'
+    )
+    opt.add_argument('-d', '--debug', action='store_true', help='output debug messages')
     opt.add_argument('hosts', nargs='*', help='hosts to update')
 
     # Merge in default args from user config file. Then parse the
@@ -350,6 +411,7 @@ def main():
 
     if args.version:
         from importlib.metadata import version
+
         try:
             ver = version(PROG)
         except Exception:
@@ -376,7 +438,9 @@ def main():
         return 'Do not run as root. Run directly as your normal user.'
 
     # From here on we are running as root ..
-    return run_root()
+    run_root()
+    return None
+
 
 if __name__ == '__main__':
     sys.exit(main())
