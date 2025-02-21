@@ -74,15 +74,11 @@ PyPI](https://pypi.org/project/pacpush/) if you prefer so just ensure
 that [`pipx`](https://pypa.github.io/pipx/) is installed then type the
 following to install on each machine. Requires Python 3.8 or later.
 
-```
-$ pipx install pacpush
-```
+    $ pipx install pacpush
 
 To upgrade:
 
-```
-$ pipx upgrade pacpush
-```
+    $ pipx upgrade pacpush
 
 ## SSH AND KEY CONFIGURATION
 
@@ -101,16 +97,14 @@ part.
 On a remote host to which you want to `pacpush` (assuming you have
 already set up personal ssh access to that host):
 
-```bash
-$ sudo mkdir -p /root/.ssh
-$ sudo chmod 700 /root/.ssh
-$ sudo cp ~/.ssh/authorized_keys /root/.ssh
+    $ sudo mkdir -p /root/.ssh
+    $ sudo chmod 700 /root/.ssh
+    $ sudo cp ~/.ssh/authorized_keys /root/.ssh
 
 Possibly remove any keys on that remote host you don't want to allow if you have
 more than one for root:
 
-$ sudoedit /root/.ssh/authorized_keys
-```
+    $ sudoedit /root/.ssh/authorized_keys
 
 Note that the `sudo` invoked by `pacpush` on itself when you run it as
 your normal user passes on `$SSH_AUTH_SOCK` so that the remote root ssh
