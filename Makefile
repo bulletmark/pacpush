@@ -9,7 +9,7 @@ check:
 
 build:
 	rm -rf dist
-	python3 -m build --sdist --wheel
+	uv build
 
 upload: build
 	uv-publish

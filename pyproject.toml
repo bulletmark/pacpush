@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "pacpush"
 description = "Utility to push an Arch host's package and AUR caches to other hosts"
 readme = "README.md"
+license = "GPL-3.0-or-later"
 requires-python = ">=3.8"
 keywords = ["pacman", "pacserve"]
 classifiers = [
@@ -27,9 +28,6 @@ Homepage = "https://github.com/bulletmark/pacpush"
 
 [project.scripts]
 pacpush = "pacpush:main"
-
-[project.license]
-text = "GPLv3"
 
 [tool.setuptools_scm]
 version_scheme = "post-release"
