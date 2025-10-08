@@ -62,6 +62,7 @@ MACH = platform.machine()
 args: Any = None
 
 # Allocate lock for log messages
+multiprocessing.set_start_method('fork', force=True)
 log_lock = multiprocessing.Lock()
 
 
