@@ -9,11 +9,9 @@ Requires root ssh access to other hosts (it is easier with an auth key).
 # Author: Mark Blakeney, Mar 2017.
 from __future__ import annotations
 
-import argparse
 import multiprocessing
 import os
 import platform
-import re
 import shlex
 import subprocess
 import sys
@@ -21,6 +19,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import argparse_from_file as argparse  # type: ignore[import-untyped]
 from platformdirs import user_config_path
 
 # Default AUR build dir[s] if not specified as command line argument
@@ -328,8 +327,7 @@ def main() -> str | int | None:
 
     # Process command line options
     opt = argparse.ArgumentParser(
-        description=__doc__,
-        epilog=f'Note you can set default starting options in {CNFFILE}.',
+        description=__doc__, from_file='' if is_root else CNFFILE
     )
     opt.add_argument(
         '-b',
@@ -395,17 +393,8 @@ def main() -> str | int | None:
     opt.add_argument('-d', '--debug', action='store_true', help='output debug messages')
     opt.add_argument('hosts', nargs='*', help='hosts to update')
 
-    # Merge in default args from user config file. Then parse the
-    # command line.
-    if not is_root and CNFFILE.is_file():
-        with CNFFILE.open() as fp:
-            lines = [re.sub(r'#.*$', '', line).strip() for line in fp]
-        cnflines = ' '.join(lines).strip()
-    else:
-        cnflines = ''
-
-    argv = shlex.split(cnflines) + sys.argv[1:]
-    args = opt.parse_args(argv)
+    args = opt.parse_args()
+    argv = sys.argv[1:]
 
     if args.debug:
         debug(argv)

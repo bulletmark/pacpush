@@ -15,6 +15,7 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
   "platformdirs",
+  "argparse-from-file",
   "requests",
   "pyalpm",
 ]
