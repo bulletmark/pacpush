@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-import argparse_from_file as argparse  # type: ignore[import-untyped]
+import argparse_from_file as argparse
 from platformdirs import user_config_path
 
 # Default AUR build dir[s] if not specified as command line argument
@@ -326,7 +326,7 @@ def main() -> str | int | None:
     is_root = os.geteuid() == 0
 
     # Process command line options
-    opt = argparse.ArgumentParser(
+    opt = argparse.ArgumentParser( # type: ignore
         description=__doc__, from_file='' if is_root else CNFFILE
     )
     opt.add_argument(
