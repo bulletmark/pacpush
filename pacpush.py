@@ -86,7 +86,7 @@ def report_updates() -> str | None:
     Run on the remote machine to report all installed native and AUR
     packages with updates pending
     """
-    import requests  # type: ignore
+    import requests
     from pyalpm import vercmp  # type: ignore
 
     # Print out version updates for standard packages
@@ -326,7 +326,7 @@ def main() -> str | int | None:
     is_root = os.geteuid() == 0
 
     # Process command line options
-    opt = argparse.ArgumentParser( # type: ignore
+    opt = argparse.ArgumentParser(
         description=__doc__, from_file='' if is_root else CNFFILE
     )
     opt.add_argument(
