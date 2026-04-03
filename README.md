@@ -152,11 +152,6 @@ make the connection.
 
 ## CONFIGURATION FILE
 
-:warning: __From pacpush version 3 onwards, the format of the
-`~/.config/pacpush/pacpush.conf` file has changed
-from [YAML](https://yaml.org/) to a simple text file where you
-specify any of the pacpush [startup options](#usage).__
-
 You can add default options to a personal configuration file
 `~/.config/pacpush/pacpush.conf`. If that file exists then each line of
 options will be concatenated and automatically prepended to your
