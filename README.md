@@ -65,20 +65,20 @@ any updated AUR packages at all.
 
 ## INSTALLATION
 
-Just install [_pacpush from the
+Requires Python 3.8 or later. Just install [_pacpush from the
 AUR_](https://aur.archlinux.org/packages/pacpush/) to the local and
 remote hosts.
 
-Note pacpush is also available [on
-PyPI](https://pypi.org/project/pacpush/) if you prefer so just ensure
-that [`pipx`](https://pipx.pypa.io/stable/) is installed then type the
-following to install on each machine. Requires Python 3.8 or later.
+Note pacpush is also available [on PyPI](https://pypi.org/project/pacpush/) if
+you prefer so just ensure that
+[`uv`](https://docs.astral.sh/uv/concepts/tools/) is installed then type the
+following to install on each machine.
 
-    $ pipx install pacpush
+    $ uv tool install pacpush
 
 To upgrade:
 
-    $ pipx upgrade pacpush
+    $ uv tool upgrade pacpush
 
 ## SSH AND KEY CONFIGURATION
 
