@@ -206,9 +206,9 @@ specified in `~/.config/pacpush/pacpush.conf`.
 Type `pacpush -h` to view the usage summary:
 
 ```
-usage: pacpush [-h] [-b AUR_BUILD_DIR] [-n] [-m] [-p PARALLEL_COUNT] [-u]
-                  [-s] [-a] [-C] [-N] [-M] [-F SSH_CONFIG_FILE] [-V] [-d]
-                  [hosts ...]
+usage: pacpush [-h] [-b AUR_BUILD_DIR] [-n] [-m] [-p PARALLEL_COUNT] [-u] [-s]
+               [-a] [-C] [-N] [-M] [-F SSH_CONFIG_FILE] [-V] [-d]
+               [hosts ...]
 
 Utility to push this Arch hosts system and AUR package caches to other host[s]
 to avoid those other hosts having to download the same new package lists and
@@ -245,8 +245,7 @@ options:
   -V, --version         show pacpush version
   -d, --debug           output debug messages
 
-Note you can set default starting options in
-$HOME/.config/pacpush/pacpush.conf.
+Note you can set default starting options in ~/.config/pacpush/pacpush.conf.
 ```
 
 ## LICENSE

@@ -115,7 +115,7 @@ def report_updates() -> str | None:
         r = requests.get(AURWEB, params=params)
         r.raise_for_status()
     except requests.exceptions.RequestException as e:
-        return f'AURWEB error: {str(e)}'
+        return f'AURWEB error: {e}'
 
     # Now print out version updates for AUR packages
     # Follow cower format for prepending AUR lines with ':: '.
@@ -268,7 +268,7 @@ def synchost(num: int, host: str) -> None:
                 print(line)
         elif line.startswith(':'):
             # AUR package:
-            _, name, _, _, newver = line.split()
+            _, name, _, _, _newver = line.split()
 
             # Sync the entire build dir[s], if it exists
             count = len(filelist)
